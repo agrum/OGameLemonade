@@ -1,0 +1,129 @@
+html {
+	height: 100%;
+}
+
+body {
+	margin: 0px;
+	font-size: 12px;
+	font-family: Verdana, Arial, serif;
+	/*background: #0c0909 url("http://www.highresolution-wallpapers.net/walls/aurora_at_space_hd-HD.jpg");*/
+	background: #0c0909 url("http://s8.postimg.org/v0edp5owl/background2.png");
+	/*background: #0c0909;*/
+	color: white;
+}
+
+a {
+	text-decoration: none;
+	color: white;
+}
+
+a:hover {
+	text-decoration: none;
+	color: #bcbcbc;
+}
+
+img {
+	border: 0px white none;
+}
+
+input {
+	text-align: right;
+	background-color: #050713;
+	border: 1px #5c5858 solid;
+	color: white;
+}
+
+table {
+	margin-left: auto;
+	margin-right: auto;
+	text-align: left;
+	color: white;
+}
+
+.header {
+	text-align: center;
+}
+
+.main {
+	height: auto;	
+	padding-top: 5px;
+	padding-bottom: 5px;
+	margin-left: auto;
+	margin-right: auto;
+	width: 80%;
+}
+
+.frontPage {
+	height: auto;	
+	margin-top: 10%;
+	margin-bottom: 10%;
+	margin-left: auto;
+	margin-right: auto;
+	width: 80%;
+	text-align: center;
+}
+
+.composition {
+	margin-left: 10px;
+	margin-right: auto;
+	width: 100%;
+}
+
+.report {
+	margin-top: 30px;
+	margin-left: 10px;
+	margin-right: 10px;
+	border: 1px #5c5858 solid;
+	background-color: #050713;
+	color: white;
+}
+
+.reportTable {
+	border-collapse: collapse;
+	border: 1px #5c5858 solid;
+	background-color: #0c0909;
+	color: white;
+	margin: 20px;
+}
+
+.reportTable th {
+	padding: 5px;
+	background-color: #0c090c;
+	border: 1px #5c5858 solid;
+}
+
+.reportTable td {
+	padding: 5px;
+	border: 1px #5c5858 solid;
+}
+
+.footer {
+	text-align: center;
+}
+
+.left {
+	float: left;
+	margin-left: 10%;
+}
+
+.right {
+	float: right;
+	margin-right: 10%;
+	margin-top: 10px;
+}
+
+.buildSubmit {
+	background: none;
+	border: 0px black solid;
+	cursor: pointer;
+	font-size: 12px;
+}
+
+.input {
+	text-align: right;
+	font-style: bold;
+	background-color: #050713;
+	padding: 2px;
+	border: 1px #5c5858 solid;
+	color: white;
+}
