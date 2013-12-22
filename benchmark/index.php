@@ -76,5 +76,9 @@ $compositionTable =
 	<div class='footer'>
 		<?php echo "temps d execution " . $page_load_time . " sec"; ?> // <a href="http://agrum.in">agrum - 2013</a>
 	</div>
+	
+	<div>
+		<?php if(isset($_GET['debug'])) echo $debug ?>
+	</div>
 </body>
 </html> 
