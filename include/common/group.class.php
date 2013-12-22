@@ -127,25 +127,15 @@ class Group extends Debug{
 		//When firing 1000 times on a set of 2000 units, the amount of different
 		//	units hit is not 1000.
 		//This amount comes from this numerical equation :
-		//f(n) = f(n-1) + (2000 - f(n)), f(0) = 0 and getting f(1000)
+		//f(n) = f(n-1) + (2000 - f(n))/2000, f(0) = 0 and getting f(1000)
 		//However it is not computationally effcicient
-		//Lurking around for a solution I started to get something with this
-		//f(n) = f(n-1) + 0.001*n*(1 - f(n-1)) and looping till 0.9 is reached,
-		//	meaning 90% of the set has been covered
-		//One value was noticeable n=693, thus 0.001*693 = 0.693. At this value
-		//	f(693) = 0.5 and what matters is ln(2) = 0.693
-		//Taking this as a hint I checked the n for f(n) = 0.75.
-		//	As hoped, the n=1386 or 2*693.
-		//The curve is then shaped as 
-		//	f(ln(2^0)) = 0
-		//	f(ln(2^1)) = 0.5
-		//	f(ln(2^2)) = 0.75 etc... (checked with next values)
-		//Knowing this, f(x) is easily understandable :
-		//	f(ln(n)) = 1 - 1 / (exp(ln(n)) so
-		//	f(x) = 1 - 1 / exp(x)
-		//Giving the following equation
-		$ratioImpacted = 1.0 - 1.0/exp($amountHit/$this->amountUnit());
-		$amountUnitHit = $ratioImpacted*$this->amountUnit();
+		//Hopefully Wolfram exists and gives you the recurrence equation right away
+		//f(n) = 2000 * (1 + ((2000-1)/2000)^n)
+		//For x units and n shots the equation is then
+		//f(n) = x * (1 + ((x-1)/x)^n)
+		//Giving the amount of unit hit at least once
+		$amountUnit = $this->amountUnit();
+		$amountUnitHit = $amountUnit * ( 1 - pow(($amountUnit-1)/$amountUnit, $amountHit));
 		
 		$this->debug( "Receive wave begin on ".$this->m_model->name()." (".number_format($this->amountUnitTemp(), 2)." units) <br/>
 			_Amount of shots : ".number_format($amountHit, 2)." <br/>
@@ -188,8 +178,7 @@ class Group extends Debug{
 			}
 			
 			//Same fantastic equation to know how many units have been hit more than once
-			$ratioImpactedTwiceOrMore = 1.0 - 1.0/exp(($amountHit-$amountUnitHit)/$amountUnitHit);
-			$amountUnitHitTwiceOrMore = $ratioImpactedTwiceOrMore*$amountUnitHit;
+			$amountUnitHitTwiceOrMore = $amountUnitHit * ( 1 - pow(($amountUnitHit-1)/$amountUnitHit, $amountHit-$amountUnitHit));
 			$amountUnitHitOnce = $amountUnitHit - $amountUnitHitTwiceOrMore;
 			
 			//We treat the units hit once
