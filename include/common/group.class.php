@@ -118,7 +118,9 @@ class Group extends Debug{
 	public function receiveWave($p_amountHit, $p_power)
 	{
 		if($this->m_model->shield() > 100*$p_power)
+		{
 			return; //Deflected
+		}
 			
 		global $model;
 		$amountHit = $p_amountHit;
@@ -184,6 +186,8 @@ class Group extends Debug{
 			//We treat the units hit once
 			if($amountUnitHitOnce > 1)
 				$this->ackImpact($amountUnitHitOnce, $combinedPower, $combined);
+			elseif($amountUnitHitTwiceOrMore <= 1)
+				break;
 			
 			$amountHit -= $amountUnitHitOnce;
 			//And increase the power by combining the shots for the next loop iteration
@@ -225,7 +229,7 @@ class Group extends Debug{
 		if($this->amountUnitTemp() <= 0)
 			return;
 			
-		$this->debug( "Unit hit ".number_format($p_combined, 1)." times (".number_format($p_amountHit, 2)." units)<br/>
+		$this->debug( "Unit hit ".number_format($p_combined, 1)." times (".number_format($p_amountHit, 2)." units with ".number_format($p_amountHit*$p_combined, 2)." shots)<br/>
 			_Power received : ".number_format($p_amountHit * $p_power)." (".number_format($p_power)." each)<br/>".PHP_EOL );	
 		
 		//Get amount of unit hit but absorbing some damage
@@ -275,19 +279,19 @@ class Group extends Debug{
 			}
 			else
 				$nonExplodingRatio = 0.0;
-			$explodingInstables = $p_amount*$unstableRatio*(1-$nonExplodingRatio);
+			$explodingUnstables = $p_amount*$unstableRatio*(1-$nonExplodingRatio);
 		
-			$this->m_unstableTemp -= $explodingInstables;
+			$this->m_unstableTemp -= $explodingUnstables;
 			
 			$this->m_unstableIntegrityTemp -= $consumedIntegrity*$nonExplodingRatio*$p_amount*$unstableRatio/$this->m_unstableInWave;
 		
 			//Remove he processed hit on unstables
 			$p_amount *= 1 - $unstableRatio;
 			
-			$this->debug( "_Instables exploding : ".number_format($explodingInstables, 2)."<br/>" );
+			$this->debug( "_Unstables exploding : ".number_format($explodingUnstables, 2)."<br/>" );
 		}
 		
-		//Create new instables
+		//Create new unstables
 		if($this->m_stableIntegrity - $consumedIntegrity < 0.7)
 		{
 			$offExplosion = max(0, $this->m_stableIntegrity - 0.7);
@@ -340,11 +344,6 @@ class Group extends Debug{
 		
 		$this->m_unstable = $this->m_unstableTemp;
 		$this->m_unstableIntegrity = $this->m_unstableIntegrityTemp;
-		
-		if($this->m_stable < 1)
-			$this->m_stable = 0;
-		if($this->m_unstable < 1)
-			$this->m_unstable = 0;
 	}
 };
 ?>

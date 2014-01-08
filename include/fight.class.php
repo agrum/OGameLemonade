@@ -31,14 +31,13 @@ class Fight {
 			$compoStr = $record['compo0Str'] .PHP_EOL. $record['compo1Str'];
 		
 			$fightCells .= 
-			'<tr>'.PHP_EOL.
-			'<td>'.PHP_EOL.
+			'<tr>'.
+			'<td>'.
 			$record['compo0Str']. PHP_EOL.PHP_EOL.
 			$record['compo1Str']. PHP_EOL.
-			'</td>'.PHP_EOL.
+			'</td>'.
 			'<td '.
-			'style="text-align:right;color:rgb('.round(12*(-$record['grade']+10)).','.round(12*($record['grade']+10)).',50);" '.
-			'title="'.$compoStr.'">'.
+			'style="text-align:right;color:rgb('.round(12*(-$record['grade']+10)).','.round(12*($record['grade']+10)).',50);" >'.
 			$record['grade'].
 			'</td></tr>'.PHP_EOL;
 		}

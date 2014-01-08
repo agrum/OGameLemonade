@@ -1,7 +1,7 @@
 <?php
 
 include "unitSpec.class.php";
-if( isset($_GET['lang']) && file_exists("../".$_GET['lang']."/lang.php") )
+if( isset($_GET['lang']) && file_exists("../include/".$_GET['lang']."/lang.php") )
 	include "../include/".$_GET['lang']."/lang.php";
 else
 	include "../include/fr/lang.php";

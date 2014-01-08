@@ -117,11 +117,19 @@ class Fleet extends Debug {
 			$shots = $p_fleet->m_groupArr[$j]->amountUnit() * $p_fleet->m_groupArr[$j]->rapidFire($this->m_groupArr);
 			for($i = 0; $i < count($this->m_groupArr); $i++)
 			{
-				if($this->m_groupArr[$i]->amountUnitTemp() <= 1)
+				if($this->m_groupArr[$i]->amountUnitTemp() < 0.5)
+				{
 					continue;
+				}
 					
 				$proportion = $this->m_groupArr[$i]->amountUnit()/$amountDefendingUnit;
 				$this->m_groupArr[$i]->receiveWave($shots*$proportion, $p_fleet->m_groupArr[$j]->m_model->power());
+				
+				if($this->m_groupArr[$i]->amountUnitTemp() < 1)
+				{
+					$this->m_groupArr[$i]->m_stableTemp = 0;
+					$this->m_groupArr[$i]->m_unstableTemp = 0;
+				}
 			}
 		}
 	}

@@ -16,7 +16,7 @@ class Benchmark {
 		global $model;
 		
 		//Get samples
-		$mysqli = connectDB();
+		$mysqli = connectDB("lemonade");
 
 		$fightCells = "";
 		$req_build = $mysqli->query('SELECT * FROM build ORDER BY id ASC');
