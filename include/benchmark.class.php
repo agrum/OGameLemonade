@@ -88,9 +88,9 @@ class Benchmark {
 		{
 			$amount += $group->amountUnit();
 			$value += $group->value();
-			$costM += $group->m_stable*$group->m_model->metal();
-			$costC += $group->m_stable*$group->m_model->cristal();
-			$costD += $group->m_stable*$group->m_model->deut();
+			$costM += $amount*$group->m_model->metal();
+			$costC += $amount*$group->m_model->cristal();
+			$costD += $amount*$group->m_model->deut();
 		}
 		//Use cumulative values
 		$proportionGroups = '';

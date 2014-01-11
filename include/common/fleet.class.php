@@ -52,6 +52,7 @@ class Fleet extends Debug {
 		
 		for($i = 0; $i < count($this->m_groupArr); $i++)
 		{
+			$this->m_groupArr[$i]->m_untouched *= $changeCoef;
 			$this->m_groupArr[$i]->m_stable *= $changeCoef;
 			$this->m_groupArr[$i]->m_unstable *= $changeCoef;
 		}
