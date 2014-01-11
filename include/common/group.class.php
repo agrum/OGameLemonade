@@ -29,30 +29,34 @@ include 'debug.class.php';
 class Group extends Debug{
 	public $m_model;
 	
+	public $m_untouched;
 	public $m_stable;
-	public $m_stableIntegrity;
+	public $m_stableHull;
 	public $m_unstable;
-	public $m_unstableIntegrity;
+	public $m_unstableHull;
 	
 	public $m_amountWShieldTemp;
 	public $m_shieldTemp;
+	public $m_untouchedTemp;
 	public $m_stableTemp;
-	public $m_stableIntegrityTemp;
+	public $m_stableHullTemp;
 	public $m_unstableTemp;
-	public $m_unstableIntegrityTemp;
+	public $m_unstableHullTemp;
 	
 	public $m_averageShieldInWave;
 	public $m_probaHitShieldInWave;
+	public $m_untouchedInWave;
 	public $m_stableInWave;
 	public $m_unstableInWave;
 	
 	public function __construct($p_model, $p_amount)
 	{
 		$this->m_model = $p_model;
-		$this->m_stable = $p_amount;
-		$this->m_stableIntegrity = 1.0;
+		$this->m_untouched = $p_amount;
+		$this->m_stable = 0;
+		$this->m_stableHull = 0.0;
 		$this->m_unstable = 0;
-		$this->m_unstableIntegrity = 1.0;
+		$this->m_unstableHull = 0.0;
 	}
 	
 	//Gives the theoric rapidfire of the group against a set of groups
@@ -65,7 +69,7 @@ class Group extends Debug{
 		//Get the amount of units on the opposite side
 		foreach($p_groupArr as $group)
 		{
-			$totalAmountUnit += $group->m_stable + $group->m_unstable;
+			$totalAmountUnit += $group->amountUnit();
 		}
 		
 		//Get the rapid fire against each group, 
@@ -75,7 +79,7 @@ class Group extends Debug{
 		{
 			$rapidFireAgainstGroup = $this->m_model->rapidfireAgainst($group->m_model->id());
 			$rapidFireAgainstGroupProba = ($rapidFireAgainstGroup-1.0)/$rapidFireAgainstGroup;
-			$rapidFireProba += $rapidFireAgainstGroupProba*($group->m_stable/$totalAmountUnit);
+			$rapidFireProba += $rapidFireAgainstGroupProba*($group->amountUnit()/$totalAmountUnit);
 		}
 		
 		//Convert back the probabilistic rapidfire to the ogame unit system (r = 1/(1-p))
@@ -90,15 +94,15 @@ class Group extends Debug{
 	}
 	
 	public function amountUnit(){
-		return $this->m_stable + $this->m_unstable;
+		return $this->m_untouched + $this->m_stable + $this->m_unstable;
 	}
 	
 	public function amountUnitTemp(){
-		return $this->m_stableTemp + $this->m_unstableTemp;
+		return $this->m_untouchedTemp + $this->m_stableTemp + $this->m_unstableTemp;
 	}
 	
 	public function amountUnitInWave(){
-		return $this->m_stableInWave + $this->m_unstableInWave;
+		return $this->m_untouchedInWave + $this->m_stableInWave + $this->m_unstableInWave;
 	}
 	
 	//Store the current stats in temporary variables that can be modified without affecting the class
@@ -107,11 +111,13 @@ class Group extends Debug{
 		$this->m_amountWShieldTemp = $this->amountUnit();
 		$this->m_shieldTemp = $this->m_model->shield()*$this->amountUnit();
 		
+		$this->m_untouchedTemp = $this->m_untouched;
+		
 		$this->m_stableTemp = $this->m_stable;
-		$this->m_stableIntegrityTemp = $this->m_stableIntegrity;
+		$this->m_stableHullTemp = $this->m_stableHull;
 		
 		$this->m_unstableTemp = $this->m_unstable;
-		$this->m_unstableIntegrityTemp = $this->m_unstableIntegrity;
+		$this->m_unstableHullTemp = $this->m_unstableHull;
 	}
 	
 	//Part of a round, which is just a set of fires of different magnitudes
@@ -160,6 +166,7 @@ class Group extends Debug{
 		//-the amount of unstable at the beginning of the wave
 		$this->m_averageShieldInWave = $this->m_shieldTemp/$this->m_amountWShieldTemp;
 		$this->m_probaHitShieldInWave = $this->m_amountWShieldTemp/$this->amountUnitTemp();
+		$this->m_untouchedInWave = $this->m_untouchedTemp;
 		$this->m_stableInWave = $this->m_stableTemp;
 		$this->m_unstableInWave = $this->m_unstableTemp;
 		
@@ -215,9 +222,12 @@ class Group extends Debug{
 			$this->ackImpact($amountUnitHit, $combinedPower, $combined);
 		}
 
-		$this->debug( "Receive wave end with ".number_format($this->amountUnitTemp(), 1)." units left<br/>
-			_Stables : ".number_format($this->m_stableTemp, 2)." (Integrity of ".number_format($this->m_stableIntegrityTemp, 2).")<br/>
-			_Instables : ".number_format($this->m_unstableTemp, 2)." (Integrity of ".number_format($this->m_unstableIntegrityTemp, 2).")<br/><br/>".PHP_EOL );
+		$this->debug( "Receive wave end with ".number_format($this->amountUnitTemp(), 1)." units left<br/>" );
+		$this->debug( "_Untouched : ".number_format($this->m_untouchedTemp, 2)."<br/>" );
+		if($this->m_stableTemp > 0)
+			$this->debug( "_Stables : ".number_format($this->m_stableTemp, 2)." (Integrity of ".number_format($this->m_stableHullTemp/$this->m_stableTemp, 2).")<br/>" );
+		if($this->m_unstableTemp > 0)
+			$this->debug( "_Unstables : ".number_format($this->m_unstableTemp, 2)." (Integrity of ".number_format($this->m_unstableHullTemp/$this->m_unstableTemp, 2).")<br/><br/>".PHP_EOL );
 	}
 	
 	//Acknoledge a number of distinct units hit with a certain combined power.
@@ -270,20 +280,20 @@ class Group extends Debug{
 			$unstableRatio = $this->m_unstableInWave/$this->amountUnitInWave();
 
 			$nonExplodingRatio = 1.0;
-			if($this->m_unstableIntegrity-$consumedIntegrity > 0)
+			$integrity = $this->m_unstableHull/$this->m_unstableInWave;
+			if($integrity - $consumedIntegrity > 0)
 			{
 				for($i = 1; $i <= $p_combined; $i++) //Find a way to get rid of this for loop, time consuming
-					$nonExplodingRatio *= $this->m_unstableIntegrity-($consumedIntegrity*$i)/$p_combined;
+					$nonExplodingRatio *= $integrity-($consumedIntegrity*$i)/$p_combined;
 				if($p_combined % 1.0 != 0.0)
-					$nonExplodingRatio *= $this->m_stableIntegrity-$consumedIntegrity/$p_combined;
+					$nonExplodingRatio *= $integrity-$consumedIntegrity/$p_combined;
 			}
 			else
 				$nonExplodingRatio = 0.0;
 			$explodingUnstables = $p_amount*$unstableRatio*(1-$nonExplodingRatio);
 		
 			$this->m_unstableTemp -= $explodingUnstables;
-			
-			$this->m_unstableIntegrityTemp -= $consumedIntegrity*$nonExplodingRatio*$p_amount*$unstableRatio/$this->m_unstableInWave;
+			$this->m_unstableHullTemp -= $explodingUnstables * $integrity;
 		
 			//Remove he processed hit on unstables
 			$p_amount *= 1 - $unstableRatio;
@@ -291,59 +301,86 @@ class Group extends Debug{
 			$this->debug( "_Unstables exploding : ".number_format($explodingUnstables, 2)."<br/>" );
 		}
 		
-		//Create new unstables
-		if($this->m_stableIntegrity - $consumedIntegrity < 0.7)
+		$affectedUntouched = $p_amount * $this->m_untouched / ($this->m_untouched+$this->m_stable);
+		$affectedStable = $p_amount * $this->m_stable / ($this->m_untouched+$this->m_stable);
+		
+		//Create new unstables from untouched group
+		if($this->createNewUnstables(1.0, $consumedIntegrity, $affectedUntouched, $p_combined, $p_power))
 		{
-			$offExplosion = max(0, $this->m_stableIntegrity - 0.7);
-			$combined = $p_combined*($consumedIntegrity - $offExplosion)/$consumedIntegrity;
+			$this->m_untouchedTemp -= $affectedUntouched;
+			$p_amount -= $affectedUntouched;
+		}
+		
+		//Create new unstables from stable group
+		if($this->m_stable > 0 && 
+			$this->createNewUnstables($this->m_stableHull/$this->m_stable, $consumedIntegrity, $affectedStable, $p_combined, $p_power))
+		{
+			$this->m_stableTemp -= $affectedStable;
+			$this->m_stableHullTemp -= $affectedStable * $this->m_stableHull/$this->m_stable;
+			$p_amount -= $affectedStable;
+		}
+		
+		//change integrity for stables
+		if($p_amount > 0 && $this->m_untouchedTemp > 0)
+		{
+			$newStables = $p_amount * $this->m_untouched / ($this->m_untouched+$this->m_stable);
+			
+			$this->m_stableHullTemp += (1.0 - $consumedIntegrity ) * $newStables;
+			if($this->m_stable > 0)
+				$this->m_stableHullTemp -= $consumedIntegrity * ($p_amount - $newStables);
+			$this->m_untouchedTemp -= $newStables;
+			$this->m_stableTemp += $newStables;
+			$this->debug( "_New stables : ".number_format($newStables, 2)."<br/>" );
+			/*if($this->m_stable > 0)
+				$this->debug( "_New stables Int : ".number_format($this->m_stableHullTemp/$this->m_stableTemp, 2)."<br/>" );*/
+		}
+	}
+	
+	public function createNewUnstables($p_integrity, $p_consumedIntegrity, $p_amount, $p_combined, $p_power)
+	{
+		if($p_integrity - $p_consumedIntegrity < 0.7)
+		{
+			$offExplosion = max(0, $p_integrity - 0.7);
+			$combined = $p_combined*($p_consumedIntegrity - $offExplosion)/$p_consumedIntegrity;
 			$first = $combined - floor($combined);
 			$combined = floor($combined);
 			
 			$nonExplodingRatio = 1.0;
-			if($this->m_stableIntegrity-$consumedIntegrity > 0)
+			if($p_integrity-$p_consumedIntegrity > 0)
 			{
 				if($offExplosion > 0)
 					$nonExplodingRatio *= max(0, 0.7 - $first*$p_power/$p_combined/$this->m_model->hull());
 				if($combined > 0)
 					for($i = 1; $i <= $p_combined; $i++) //Find a way to get rid of this for loop, time consuming
-						$nonExplodingRatio *= $this->m_stableIntegrity-($consumedIntegrity*$i)/$p_combined;
+						$nonExplodingRatio *= $p_integrity-($p_consumedIntegrity*$i)/$p_combined;
 				if($combined % 1.0 != 0.0)
-					$nonExplodingRatio *= $this->m_stableIntegrity-$consumedIntegrity/$p_combined;
+					$nonExplodingRatio *= $p_integrity-$p_consumedIntegrity/$p_combined;
 			}
 			else
 				$nonExplodingRatio = 0.0;
 			$explodingRatio = 1 - $nonExplodingRatio;
 				
 			$newUnstables = $p_amount * $nonExplodingRatio;
-			
-			if($newUnstables > 0)
-			{
-				$this->m_unstableIntegrityTemp = ($this->m_unstableIntegrityTemp*$this->m_unstableTemp + max(0, $this->m_stableIntegrity - $consumedIntegrity)*$newUnstables)/($newUnstables+$this->m_unstableTemp);
-			}
-			$this->debug( "_New explosions : ".number_format($p_amount * $explodingRatio, 2)." : ".number_format($explodingRatio, 2)."<br/>
-				_New instables : ".number_format($newUnstables, 2)."<br/>" );
-			//$this->debug( "___ : ". $this->m_unstableTemp ."<br/>" );
+			$this->m_unstableHullTemp += $newUnstables * ($p_integrity-$p_consumedIntegrity);
 			$this->m_unstableTemp += $newUnstables;
-			//$this->debug( "___ : ". $this->m_unstableTemp ."<br/>" );
-			$this->m_stableTemp -= $p_amount;
-			$p_amount = 0;
+			
+			$this->debug( "_New explosions : ".number_format($p_amount * $explodingRatio, 2)." : ".number_format($explodingRatio, 2)."<br/>
+				_New unstables : ".number_format($newUnstables, 2)."<br/>" );
+			return true;
 		}
-		
-		//change integrity for stables
-		if($p_amount > 0 && $this->m_stableTemp > 0)
-		{
-			$this->m_stableIntegrityTemp -= $consumedIntegrity*$p_amount/$this->m_stableInWave;
-		}
+		return false;
 	}
 	
 	//Modify the group according to the temporary changes made
 	public function applyRound()
 	{
+		$this->m_untouched = $this->m_untouchedTemp;
+		
 		$this->m_stable = $this->m_stableTemp;
-		$this->m_stableIntegrity = $this->m_stableIntegrityTemp;
+		$this->m_stableHull = $this->m_stableHullTemp;
 		
 		$this->m_unstable = $this->m_unstableTemp;
-		$this->m_unstableIntegrity = $this->m_unstableIntegrityTemp;
+		$this->m_unstableHull = $this->m_unstableHullTemp;
 	}
 };
 ?>

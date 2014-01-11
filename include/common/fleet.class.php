@@ -105,30 +105,29 @@ class Fleet extends Debug {
 	}
 	
 	private function attackedFrom($p_fleet){
-		for($j = 0; $j < count($p_fleet->m_groupArr); $j++)
-		{
-			if($p_fleet->m_groupArr[$j]->amountUnitTemp() == 0)
-				continue;
-				
+		foreach($p_fleet->m_groupArr as $attackingGroup)
+		{				
 			$amountDefendingUnit = 0;
-			for($i = 0; $i < count($this->m_groupArr); $i++)
-				$amountDefendingUnit += $this->m_groupArr[$i]->amountUnit();
+			foreach($this->m_groupArr as $defendingGroup)
+				$amountDefendingUnit += $defendingGroup->amountUnit();
 			
-			$shots = $p_fleet->m_groupArr[$j]->amountUnit() * $p_fleet->m_groupArr[$j]->rapidFire($this->m_groupArr);
-			for($i = 0; $i < count($this->m_groupArr); $i++)
-			{
-				if($this->m_groupArr[$i]->amountUnitTemp() < 0.5)
+			$shots = $attackingGroup->amountUnit() * $attackingGroup->rapidFire($this->m_groupArr);
+			foreach($this->m_groupArr as $defendingGroup)
+			{			
+				if($defendingGroup->amountUnitTemp() <= 0)
 				{
+					$defendingGroup->m_stableTemp = 0;
+					$defendingGroup->m_unstableTemp = 0;
 					continue;
 				}
-					
-				$proportion = $this->m_groupArr[$i]->amountUnit()/$amountDefendingUnit;
-				$this->m_groupArr[$i]->receiveWave($shots*$proportion, $p_fleet->m_groupArr[$j]->m_model->power());
+			
+				$proportion = $defendingGroup->amountUnit()/$amountDefendingUnit;
+				$defendingGroup->receiveWave($shots*$proportion, $attackingGroup->m_model->power());
 				
-				if($this->m_groupArr[$i]->amountUnitTemp() < 1)
+				if($defendingGroup->amountUnitTemp() < 1)
 				{
-					$this->m_groupArr[$i]->m_stableTemp = 0;
-					$this->m_groupArr[$i]->m_unstableTemp = 0;
+					$defendingGroup->m_stableTemp = 0;
+					$defendingGroup->m_unstableTemp = 0;
 				}
 			}
 		}

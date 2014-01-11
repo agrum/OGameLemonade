@@ -1,6 +1,6 @@
 <?php
 
-include '../include/common/short.php';
+include '../include/short.php';
 
 //Full name pokedex
 $name = array(

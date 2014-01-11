@@ -1,6 +1,6 @@
 <?php
 
-include 'common/fleet.class.php';
+include 'common'.(isset($_GET['classic']) ? "Classic" : "" ).'/fleet.class.php';
 
 class Fight {
 	private $m_fleetA;

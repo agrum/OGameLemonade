@@ -1,7 +1,7 @@
 <?php
 
 include '../../connectDB.php';
-include '../common/short.php';
+include '../short.php';
 
 //Full name pokedex
 $name = array(
