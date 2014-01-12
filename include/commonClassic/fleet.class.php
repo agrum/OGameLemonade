@@ -47,7 +47,7 @@ class Fleet extends Debug {
 	}
 	
 	public static function fight($p_fleet1, $p_fleet2){
-		$numberSimu = 1;
+		$numberSimu = 10;
 		
 		$outFleet1 = clone $p_fleet1;
 		$outFleet2 = clone $p_fleet2;
