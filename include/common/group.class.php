@@ -1,6 +1,7 @@
 <?php
 
 include 'spec.php';
+include 'division.class.php';
 include 'debug.class.php';
 
 //Here lies the magic 'woulouloouuuu....'
@@ -29,49 +30,37 @@ include 'debug.class.php';
 class Group extends Debug{
 	public $m_model;
 	
-	public $m_divArr;
-	public $m_divIntegrityArr;
+	public $m_stableArr;
 	public $m_unstable;
-	public $m_unstableIntegrityArr;
 	
 	public $m_amountWShieldTemp;
 	public $m_shieldTemp;
-	public $m_divArrTemp;
-	public $m_divIntegrityArrTemp;
+	public $m_stableArrTemp;
 	public $m_unstableTemp;
-	public $m_unstableIntegrityArrTemp;
 	
 	public $m_averageShieldInWave;
 	public $m_probaHitShieldInWave;
-	public $m_divArrInWave;
-	public $m_divIntegrityArrInWave;
+	public $m_stableArrInWave;
 	public $m_unstableInWave;
-	public $m_unstableIntegrityArrInWave;
 	
 	public function __construct($p_model, $p_amount)
 	{
 		$this->m_model = $p_model;
 		
-		$this->m_divArr[0] = $p_amount;
-		$this->m_divIntegrityArr[0] = 1.0 * $p_amount;
+		$this->m_stableArr[0] = new Division($p_amount);
 		for($i = 1; $i < 30; $i++)
-		{
-			$this->m_divArr[$i] = 0;
-			$this->m_divIntegrityArr[$i] = 0.0;
-		}
-		$this->m_unstable = 0;
-		$this->m_unstableIntegrity = 0.0;
+			$this->m_stableArr[$i] = new Division(0);
+		$this->m_unstable = new Division(0);
 	}	
 	
 	public function __clone()
 	{
 		$this->m_model = $this->m_model;
 		
-		$this->m_divArr = $this->m_divArr;
-		$this->m_divIntegrityArr = $this->m_divIntegrityArr;
+		for($i = 0; $i < count($this->m_stableArr); $i++)
+			$this->m_stableArr[$i] = clone $this->m_stableArr[$i];
 		
-		$this->m_unstable = $this->m_unstable;
-		$this->m_unstableIntegrity = $this->m_unstableIntegrity;
+		$this->m_unstable = clone $this->m_unstable;
 	}
 	
 	//Gives the theoric rapidfire of the group against a set of groups
@@ -109,23 +98,32 @@ class Group extends Debug{
 	}
 	
 	public function amountUnit(){
-		return array_sum($this->m_divArr) + $this->m_unstable;
+		$count = $this->m_unstable->m_amount;
+		for($i = 0; $i < count($this->m_stableArr); $i++)
+			$count += $this->m_stableArr[$i]->m_amount;
+		return $count;
 	}
 	
 	public function amountUnitTemp(){
-		return array_sum($this->m_divArrTemp) + $this->m_unstableTemp;
+		$count = $this->m_unstableTemp->m_amount;
+		for($i = 0; $i < count($this->m_stableArrTemp); $i++)
+			$count += $this->m_stableArrTemp[$i]->m_amount;
+		return $count;
 	}
 	
 	public function amountUnitInWave(){
-		return array_sum($this->m_divArrInWave) + $this->m_unstableInWave;
+		$count = $this->m_unstableInWave->m_amount;
+		for($i = 0; $i < count($this->m_stableArrInWave); $i++)
+			$count += $this->m_stableArrInWave[$i]->m_amount;
+		return $count;
 	}
 	
 	public function getTopIntegrityForDiv($p_id){
-		return 0.3 * (count($this->m_divArr) - $p_id) / count($this->m_divArr) + 0.7;
+		return 0.3 * (count($this->m_stableArr) - $p_id) / count($this->m_stableArr) + 0.7;
 	}
 	
 	public function getDivIDFromIntegrityNorm($p_integrityNorm){
-		return round((count($this->m_divArr) - 1) * (1.0 - (($p_integrityNorm - 0.7) / 0.3)));
+		return round((count($this->m_stableArr) - 1) * (1.0 - (($p_integrityNorm - 0.7) / 0.3)));
 	}
 	
 	//Store the current stats in temporary variables that can be modified without affecting the class
@@ -133,12 +131,9 @@ class Group extends Debug{
 	{
 		$this->m_amountWShieldTemp = $this->amountUnit();
 		$this->m_shieldTemp = $this->m_model->shield()*$this->amountUnit();
-		
-		$this->m_divArrTemp = $this->m_divArr;
-		$this->m_divIntegrityArrTemp = $this->m_divIntegrityArr;
-		
-		$this->m_unstableTemp = $this->m_unstable;
-		$this->m_unstableIntegrityTemp = $this->m_unstableIntegrity;
+		foreach ($this->m_stableArr as $i => $stable)
+			$this->m_stableArrTemp[$i] = clone $stable;
+		$this->m_unstableTemp = clone $this->m_unstable;
 	}
 	
 	//Part of a round, which is just a set of fires of different magnitudes
@@ -195,10 +190,9 @@ class Group extends Debug{
 		else
 			$this->m_averageShieldInWave = 0;
 		$this->m_probaHitShieldInWave = $this->m_amountWShieldTemp/$this->amountUnitTemp();
-		$this->m_divArrInWave = $this->m_divArrTemp;
-		$this->m_divIntegrityArrInWave = $this->m_divIntegrityArrTemp;
-		$this->m_unstableInWave = $this->m_unstableTemp;
-		$this->m_unstableIntegrityInWave = $this->m_unstableIntegrityTemp;
+		foreach ($this->m_stableArrTemp as $i => $stableTemp)
+			$this->m_stableArrInWave[$i] = clone $stableTemp;
+		$this->m_unstableInWave = clone $this->m_unstableTemp;
 		
 		//Combination of power loop
 		//At the beginning we have a certain amount of different units hit. However, there is
@@ -263,14 +257,14 @@ class Group extends Debug{
 		}
 
 		$this->debug( "Receive wave end with ".number_format($this->amountUnitTemp(), 1)." units left<br/>" );
-		for($i = 0; $i < count($this->m_divArrTemp); $i++)
+		for($i = 0; $i < count($this->m_stableArrTemp); $i++)
 		{
-			$div = $this->m_divArrTemp[$i];
-			if($div > 0)
-				$this->debug( "_Division ".$i." ".number_format($this->getTopIntegrityForDiv($i), 2)." : ".number_format($div, 2)." (Integrity of ".number_format($this->m_divIntegrityArrTemp[$i] / $div, 2).")<br/>" );
+			$div = $this->m_stableArrTemp[$i];
+			if($div->m_amount > 0)
+				$this->debug( "_Division ".$i." ".number_format($this->getTopIntegrityForDiv($i), 2)." : ".number_format($div->m_amount, 2)." (Integrity of ".number_format($div->integrityNorm(), 2).")<br/>" );
 		}
-		if($this->m_unstableTemp > 0)
-			$this->debug( "_Unstable : ".number_format($this->m_unstableTemp, 2)." (Integrity of ".number_format($this->m_unstableIntegrityTemp / $this->m_unstableTemp, 2).")<br/>" );
+		if($this->m_unstableTemp->m_amount > 0)
+			$this->debug( "_Unstable : ".number_format($this->m_unstableTemp->m_amount, 2)." (Integrity of ".number_format($this->m_unstableTemp->integrityNorm(), 2).")<br/>" );
 		$this->debug( "<br/>".PHP_EOL );
 	}
 	
@@ -307,9 +301,9 @@ class Group extends Debug{
 		
 			//Direct hit after absorbtion (must trigger even with null power for
 			//	explosion)
-			$unstableTempBefore = $this->m_unstableTemp;
+			$unstableTempBefore = $this->m_unstableTemp->m_amount;
 			$this->affectIntegrity($amountHitOnShield, $p_power, $p_combined);
-			$unstableTempAfter = $this->m_unstableTemp;
+			$unstableTempAfter = $this->m_unstableTemp->m_amount;
 		
 			//Reduce the number of unit with shield if all has been consumed
 			if($absorbed > 0 && $absorbed == $this->m_averageShieldInWave)
@@ -329,13 +323,13 @@ class Group extends Debug{
 		//s	return;
 		
 		//Exploding	old instables
-		if($this->m_unstableInWave > 0) //Last div is unstable
+		if($this->m_unstableInWave->m_amount > 0) //Last div is unstable
 		{
 			//Get the ratio of unstable in the overall set of unit
-			$unstableRatio = $this->m_unstableInWave/$this->amountUnitInWave();
+			$unstableRatio = $this->m_unstableInWave->m_amount/$this->amountUnitInWave();
 
 			$nonExplodingRatio = 1.0;
-			$integrity = $this->m_unstableIntegrityInWave/$this->m_unstableInWave;
+			$integrity = $this->m_unstableInWave->integrityNorm();
 			if($integrity - $consumedIntegrity > 0)
 			{
 				for($i = 1; $i <= $p_combined; $i++) //Find a way to get rid of this for loop, time consuming
@@ -348,9 +342,9 @@ class Group extends Debug{
 			$nonExplodingUnstables = $p_amount*$unstableRatio*$nonExplodingRatio;
 			$explodingUnstables = $p_amount*$unstableRatio*(1-$nonExplodingRatio);
 		
-			$this->m_unstableTemp -= $explodingUnstables;
-			$this->m_unstableIntegrityTemp -= $explodingUnstables * $integrity;
-			$this->m_unstableIntegrityTemp -= $nonExplodingUnstables * $consumedIntegrity;
+			$this->m_unstableTemp->m_amount -= $explodingUnstables;
+			$this->m_unstableTemp->m_integrity -= $explodingUnstables * $integrity;
+			$this->m_unstableTemp->m_integrity -= $nonExplodingUnstables * $consumedIntegrity;
 		
 			//Remove he processed hit on unstables
 			$p_amount *= 1 - $unstableRatio;
@@ -358,25 +352,26 @@ class Group extends Debug{
 			$this->debug( "_Unstables exploding : ".number_format($explodingUnstables, 2)."<br/>" );
 		}
 		
-		if($consumedIntegrity == 0 || array_sum($this->m_divArrInWave) == 0)
+		$amountInWave = $this->amountUnitInWave() - $this->m_unstableInWave->m_amount;
+		if($consumedIntegrity == 0 || $amountInWave == 0)
 			return;
 		
 		//Manage stables
-		for($i = 0; $i < count($this->m_divArr); $i++)
+		for($i = 0; $i < count($this->m_stableArr); $i++)
 		{
-			$affected = $p_amount * $this->m_divArrInWave[$i] / array_sum($this->m_divArrInWave);
+			$affected = $p_amount * $this->m_stableArrInWave[$i]->m_amount / $amountInWave;
 			if($affected < 0.01)
 				continue;
 			if(!$this->createNewUnstables($i, $consumedIntegrity, $affected, $p_combined, $p_power))
 			{
-				$integrityNorm = $this->m_divIntegrityArrInWave[$i] / $this->m_divArrInWave[$i];
+				$integrityNorm = $this->m_stableArrInWave[$i]->integrityNorm();
 				$destDivId = $this->getDivIDFromIntegrityNorm($integrityNorm - $consumedIntegrity);
-				
-				$this->m_divArrTemp[$i] -= $affected;
-				$this->m_divIntegrityArrTemp[$i] -= $integrityNorm * $affected;
-				
-				$this->m_divArrTemp[$destDivId] += $affected;
-				$this->m_divIntegrityArrTemp[$destDivId] += ($integrityNorm - $consumedIntegrity ) * $affected;
+			
+				$this->m_stableArrTemp[$i]->m_amount -= $affected;
+				$this->m_stableArrTemp[$i]->m_integrity -= $integrityNorm * $affected;
+			
+				$this->m_stableArrTemp[$destDivId]->m_amount += $affected;
+				$this->m_stableArrTemp[$destDivId]->m_integrity += ($integrityNorm - $consumedIntegrity ) * $affected;
 			}
 		}
 	}
@@ -384,16 +379,15 @@ class Group extends Debug{
 	//Modify the group according to the temporary changes made
 	public function applyRound()
 	{
-		$this->m_divArr = $this->m_divArrTemp;
-		$this->m_divIntegrityArr = $this->m_divIntegrityArrTemp;
+		foreach ($this->m_stableArrTemp as $i => $stableTemp)
+			$this->m_stableArr[$i] = clone $stableTemp;
 		
-		$this->m_unstable = $this->m_unstableTemp;
-		$this->m_unstableIntegrity = $this->m_unstableIntegrityTemp;
+		$this->m_unstable = clone $this->m_unstableTemp;
 	}
 	
 	public function createNewUnstables($p_divID, $p_consumedIntegrity, $p_amount, $p_combined, $p_power)
 	{
-		$p_integrity = $this->m_divIntegrityArrInWave[$p_divID] / $this->m_divArrInWave[$p_divID];
+		$p_integrity = $this->m_stableArrInWave[$p_divID]->integrityNorm();
 		if($p_integrity - $p_consumedIntegrity < 0.7)
 		{
 			$offExplosion = max(0, $p_integrity - 0.7);
@@ -418,11 +412,11 @@ class Group extends Debug{
 				
 			$newUnstables = $p_amount * $nonExplodingRatio;
 			
-			$this->m_divArrTemp[$p_divID] -= $p_amount;
-			$this->m_divIntegrityArrTemp[$p_divID] -= $p_amount * $p_integrity;
+			$this->m_stableArrTemp[$p_divID]->m_amount -= $p_amount;
+			$this->m_stableArrTemp[$p_divID]->m_integrity -= $p_amount * $p_integrity;
 			
-			$this->m_unstableTemp += $newUnstables;
-			$this->m_unstableIntegrityTemp += $newUnstables * ($p_integrity-$p_consumedIntegrity);
+			$this->m_unstableTemp->m_amount += $newUnstables;
+			$this->m_unstableTemp->m_integrity += $newUnstables * ($p_integrity-$p_consumedIntegrity);
 			
 			$this->debug( "_New explosions : ".number_format($p_amount * $explodingRatio, 2)." : ".number_format($explodingRatio, 2)."<br/>
 				_New unstables : ".number_format($newUnstables, 2)."<br/>" );
