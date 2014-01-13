@@ -54,7 +54,7 @@ class Group extends Debug{
 		
 		$this->m_divArr[0] = $p_amount;
 		$this->m_divIntegrityArr[0] = 1.0 * $p_amount;
-		for($i = 1; $i < 10; $i++)
+		for($i = 1; $i < 30; $i++)
 		{
 			$this->m_divArr[$i] = 0;
 			$this->m_divIntegrityArr[$i] = 0.0;
@@ -225,23 +225,26 @@ class Group extends Debug{
 			{
 				if($uniquePower == $combinedPower)
 					$this->ackImpact($amountUnitHitOnce, $combinedPower, $combined);
-				else //TODO work on a more smoother distribution
+				else
 				{
 					$startCombinedPower = $combinedPower / 2;
-					$startCombined = $combinedPower / 2 / $uniquePower;
-					for($i = 0; $i * $uniquePower < $startCombinedPower; $i++)
+					$startCombined = $combined / 2;
+					
+					for($i = 1; $i <= $startCombined; $i++)
 					{
 						$this->ackImpact(
-							$amountUnitHitOnce / $startCombined, 
-							$startCombinedPower + ($i + 1) * $uniquePower, 
-							$startCombined + ($i + 1));
+							$amountUnitHitOnce / $startCombined,
+							$startCombinedPower + $i * $uniquePower, 
+							$startCombined + $i);
 					}
 				}
+				$amountHit -= $amountUnitHitOnce;
 			}
 			elseif($amountUnitHitMoreThanOnce <= 1)
 				break;
+			else
+				$amountUnitHitMoreThanOnce += $amountUnitHitOnce;
 			
-			$amountHit -= $amountUnitHitOnce;
 			//And increase the power by combining the shots for the next loop iteration
 			$amountHit /= 2;
 			$amountUnitHit = $amountUnitHitMoreThanOnce;
@@ -286,25 +289,34 @@ class Group extends Debug{
 		//Get amount of unit hit but absorbing some damage
 		$amountHitOnShield = $p_amountHit*$this->m_probaHitShieldInWave;
 		
+		
 		//Direct hit on target without shield
 		if($this->m_probaHitShieldInWave != 1)
 		{
 			$this->affectIntegrity($p_amountHit - $amountHitOnShield, $p_power, $p_combined);
 		}
 			
-		//Shield effect
-		$absorbed = min($this->m_averageShieldInWave, $p_power);
+		if($amountHitOnShield > 0.01)
+		{
+			//Shield effect
+			$absorbed = min($this->m_averageShieldInWave, $p_power);
 		
-		$this->m_shieldTemp -= $amountHitOnShield*$absorbed;
-		$this->debug( "_Power deflected : ".number_format(100*$absorbed/$p_power, 2)."% <br/>" );
-		$p_power -= $absorbed;
+			$this->m_shieldTemp -= $amountHitOnShield*$absorbed;
+			$this->debug( "_Power deflected : ".number_format(100*$absorbed/$p_power, 2)."% <br/>" );
+			$p_power -= $absorbed;
 		
-		//Direct hit after absorbtion (must trigger even with null power for
-		//	explosion)
-		$this->affectIntegrity($amountHitOnShield, $p_power, $p_combined);
-		//Reduce the number of unit with shield if all has been consumed
-		if($absorbed == $this->m_averageShieldInWave)
-			$this->m_amountWShieldTemp -= $amountHitOnShield;
+			//Direct hit after absorbtion (must trigger even with null power for
+			//	explosion)
+			$unstableTempBefore = $this->m_unstableTemp;
+			$this->affectIntegrity($amountHitOnShield, $p_power, $p_combined);
+			$unstableTempAfter = $this->m_unstableTemp;
+		
+			//Reduce the number of unit with shield if all has been consumed
+			if($absorbed > 0 && $absorbed == $this->m_averageShieldInWave)
+				$this->m_amountWShieldTemp -= $amountHitOnShield;
+			else
+				$this->m_amountWShieldTemp -= $unstableTempBefore - $unstableTempAfter;
+		}
 	}
 	
 	//Acknoledge a number of distinct units hit with a certain combined power.
@@ -346,14 +358,14 @@ class Group extends Debug{
 			$this->debug( "_Unstables exploding : ".number_format($explodingUnstables, 2)."<br/>" );
 		}
 		
-		if($consumedIntegrity == 0)
+		if($consumedIntegrity == 0 || array_sum($this->m_divArrInWave) == 0)
 			return;
 		
 		//Manage stables
 		for($i = 0; $i < count($this->m_divArr); $i++)
 		{
 			$affected = $p_amount * $this->m_divArrInWave[$i] / array_sum($this->m_divArrInWave);
-			if($affected == 0)
+			if($affected < 0.01)
 				continue;
 			if(!$this->createNewUnstables($i, $consumedIntegrity, $affected, $p_combined, $p_power))
 			{

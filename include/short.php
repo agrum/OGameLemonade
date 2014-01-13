@@ -1,6 +1,9 @@
 <?php
 
 //Stand alone short names
+$smCar = 'SC';
+$laCar = 'LC';
+
 $ligFi = 'LF';
 $heaFi = 'HF';
 $cruis = 'CR';
@@ -10,8 +13,6 @@ $destr = 'DT';
 $death = 'DS';
 $batCr = 'BC';
 
-$smCar = 'SC';
-$laCar = 'LC';
 $recyc = 'RC';
 $colon = 'CS';
 $probe = 'PR';
@@ -31,6 +32,9 @@ $misIn = 'MT';
 
 //Short name put in the $short array
 $short = array(
+	$smCar,
+	$laCar,
+	
 	$ligFi,
 	$heaFi,
 	$cruis,
@@ -40,8 +44,6 @@ $short = array(
 	$death,
 	$batCr,
 	
-	$smCar,
-	$laCar,
 	$probe,
 	$colon,
 	$recyc,

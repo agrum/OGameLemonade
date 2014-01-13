@@ -19,6 +19,42 @@ $g_deut = 1;
 $model = array();
 //Follows all the UnitSpec classes pushed into the $model array
 
+
+
+//CIVIL
+
+$model[$smCar] = new UnitSpec(
+	$smCar,
+	true,
+	true,
+	true,
+	2000,
+	2000,
+	0,
+	400,
+	10,
+	5,
+	array(
+		$probe => 5
+	)
+);
+
+$model[$laCar] = new UnitSpec(
+	$laCar,
+	true,
+	true,
+	true,
+	6000,
+	6000,
+	0,
+	1200,
+	25,
+	5,
+	array(
+		$probe => 5
+	)
+);
+
 //MILITAIRE
 
 $model[$ligFi] = new UnitSpec(
@@ -179,38 +215,6 @@ $model[$batCr] = new UnitSpec(
 );
 
 //CIVIL
-
-$model[$smCar] = new UnitSpec(
-	$smCar,
-	true,
-	true,
-	true,
-	2000,
-	2000,
-	0,
-	400,
-	10,
-	5,
-	array(
-		$probe => 5
-	)
-);
-
-$model[$laCar] = new UnitSpec(
-	$laCar,
-	true,
-	true,
-	true,
-	6000,
-	6000,
-	0,
-	1200,
-	25,
-	5,
-	array(
-		$probe => 5
-	)
-);
 
 $model[$recyc] = new UnitSpec(
 	$recyc,
