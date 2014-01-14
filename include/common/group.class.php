@@ -45,7 +45,7 @@ class Group extends Debug{
 	public function __construct($p_model, $p_amount)
 	{
 		$this->m_model = $p_model;
-		$this->m_amountDiv = 20;
+		$this->m_amountDiv = 30;
 		$this->m_divCoverage = 0.5;
 		
 		$this->m_divArr[0] = new Division($p_amount);
@@ -95,24 +95,33 @@ class Group extends Debug{
 		return $this->m_model->cost()*$this->amountUnit();
 	}
 	
+	public function setValue($p_coef)
+	{
+		foreach ($this->m_divArr as &$div)
+		{
+			$div->m_amount *= $p_coef;
+			$div->m_integrity *= $p_coef;
+		}
+	}
+	
 	public function amountUnit(){
 		$count = 0;
-		foreach ($this->m_divArr as &$divTemp)
-			$count += $divTemp->m_amount;
+		foreach ($this->m_divArr as &$div)
+			$count += $div->m_amount;
 		return $count;
 	}
 	
 	public function amountUnitTemp(){
 		$count = 0;
-		foreach ($this->m_divArrTemp as &$divTemp)
-			$count += $divTemp->m_amount;
+		foreach ($this->m_divArrTemp as &$div)
+			$count += $div->m_amount;
 		return $count;
 	}
 	
 	public function amountUnitInWave(){
 		$count = 0;
-		foreach ($this->m_divArrInWave as &$divTemp)
-			$count += $divTemp->m_amount;
+		foreach ($this->m_divArrInWave as &$div)
+			$count += $div->m_amount;
 		return $count;
 	}
 	
@@ -146,7 +155,8 @@ class Group extends Debug{
 		}
 			
 		global $model;
-		$amountHit = $p_amountHit;
+		$amountHit = $p_amountHit*$this->amountUnitTemp()/$this->amountUnit();
+		$amountUnit = $this->amountUnitTemp();
 		//The equation bellow comes from the necessity to know how many different
 		//	targets have been hit.
 		//When firing 1000 times on a set of 2000 units, the amount of different
@@ -159,7 +169,6 @@ class Group extends Debug{
 		//For x units and n shots the equation is then
 		//f(n) = x * (1 + ((x-1)/x)^n)
 		//Giving the amount of unit hit at least once
-		$amountUnit = $this->amountUnit();
 		$amountUnitHit = $amountUnit * ( 1 - pow(($amountUnit-1)/$amountUnit, $amountHit));
 		
 		$this->debug( "Receive wave begin on ".$this->m_model->name()." (".number_format($this->amountUnitTemp(), 2)." units) <br/>
@@ -167,21 +176,12 @@ class Group extends Debug{
 			_Proportion managed : ".number_format($this->amountUnitTemp()/$this->amountUnit() ,3)."<br/>
 			_Power : $p_power<br/>
 			_Amount unit hit : ".number_format($amountUnitHit ,2)."<br/>".PHP_EOL );
-			
-		//Remove the proportion of units already destroyed during this ongoing round
-		$amountUnitHit *= $this->amountUnitTemp()/$this->amountUnit();
-		
-		//Remember the power of a soloing unit
-		$uniquePower = $p_power;
-		$combinedPower = $p_power;
-		//Because we will combine powers 
-		$combined = 1;
 		
 		//Set the constant variables during the wave
 		//We want to recall 
 		//-the average shield on each unit
 		//-the probabilty to hit a shield
-		//-the amount of unstable at the beginning of the wave
+		//-the amount of unit in each division at the beginning of the wave
 		if($this->m_amountWShieldTemp > 0)
 			$this->m_averageShieldInWave = $this->m_shieldTemp/$this->m_amountWShieldTemp;
 		else
@@ -189,67 +189,75 @@ class Group extends Debug{
 		$this->m_probaHitShieldInWave = $this->m_amountWShieldTemp/$this->amountUnitTemp();
 		foreach ($this->m_divArrTemp as $i => $stableTemp)
 			$this->m_divArrInWave[$i] = clone $stableTemp;
-		
-		//Combination of power loop
-		//At the beginning we have a certain amount of different units hit. However, there is
-		//	more single shots than units hit. Thus, some units receive more than one hit. This
-		//	loop combine the shots one by one until no more shot/unit is left unmanaged
-		while($amountUnitHit > 1)
-		{		
-			//If the combined power outcast the shield + hull of the unit
-			//	just send the shots and stop the loop
-			if($combinedPower >= $this->m_model->hull() + $this->m_model->shield())
-			{
-				$this->ackImpact($amountUnitHit, $combinedPower*$amountHit/$amountUnitHit, $combined*$amountHit/$amountUnitHit);
-				$amountUnitHit = 0;
-				$amountHit = 0;
-				break;
-			}
-			
-			//Same fantastic equation to know how many units have been hit more than once
-			$amountUnitHitOnce = $amountUnitHit * pow(($amountUnitHit-1)/$amountUnitHit, $amountHit-$amountUnitHit);
-			$amountUnitHitMoreThanOnce = $amountUnitHit - $amountUnitHitOnce;
-			
-			//We treat the units hit once
-			if($amountUnitHitOnce > 1.0)
-			{
-				if($uniquePower == $combinedPower)
-					$this->ackImpact($amountUnitHitOnce, $combinedPower, $combined);
-				else
-				{
-					$startCombinedPower = $combinedPower / 2;
-					$startCombined = $combined / 2;
-					
-					for($i = 1; $i <= $startCombined; $i++)
-					{
-						$this->ackImpact(
-							$amountUnitHitOnce / $startCombined,
-							$startCombinedPower + $i * $uniquePower, 
-							$startCombined + $i);
-					}
-				}
-				$amountHit -= $amountUnitHitOnce;
-			}
-			elseif($amountUnitHitMoreThanOnce <= 1)
-				break;
-			else
-				$amountUnitHitMoreThanOnce += $amountUnitHitOnce;
-			
-			//And increase the power by combining the shots for the next loop iteration
-			$amountHit /= 2;
-			$amountUnitHit = $amountUnitHitMoreThanOnce;
-			$combinedPower *= 2;
-			$combined *= 2;
-		}
-		
-		//Process residuals
-		//Being here means there is less than one unit left unmanaged but some 
-		//	fire power left. We manage it.
-		if($amountHit > 0 && $amountUnitHit > 0)
+	
+		if($amountHit / $amountUnit >= 10)
 		{
-			$combinedPower *= $amountHit/$amountUnitHit;
-			$combined *= $amountHit/$amountUnitHit;
-			$this->ackImpact($amountUnitHit, $combinedPower, $combined);
+			$r = $amountHit / $amountUnit;
+			$gaussiaSpan = 25.0 * sqrt($r / 50.0);
+			$distributionArr = array(-0.38, -0.16, 0.0, 0.16, 0.38);
+			foreach($distributionArr as $d)
+			{
+				$this->ackImpact(
+					$amountUnit / 5.0, 
+					$p_power * ($r + $gaussiaSpan*$d), 
+					$r + $gaussiaSpan*$d);
+			}
+		}
+		else
+		{
+			//Remember the power of a soloing unit
+			$uniquePower = $p_power;
+			$combinedPower = $p_power;
+			//Because we will combine powers 
+			$combined = 1;
+			
+			//Combination of power loop
+			//At the beginning we have a certain amount of different units hit. However, there is
+			//	more single shots than units hit. Thus, some units receive more than one hit. This
+			//	loop combine the shots one by one until no more shot/unit is left unmanaged
+			while($amountUnitHit > 1)
+			{		
+				//If the combined power outcast the shield + hull of the unit
+				//	just send the shots and stop the loop
+				if($combinedPower >= $this->m_model->hull() + $this->m_model->shield())
+				{
+					$this->ackImpact($amountUnitHit, $combinedPower*$amountHit/$amountUnitHit, $combined*$amountHit/$amountUnitHit);
+					$amountUnitHit = 0;
+					$amountHit = 0;
+					break;
+				}
+			
+				//Same fantastic equation to know how many units have been hit more than once
+				$amountUnitHitOnce = $amountUnitHit * pow(($amountUnitHit-1)/$amountUnitHit, $amountHit-$amountUnitHit);
+				$amountUnitHitMoreThanOnce = $amountUnitHit - $amountUnitHitOnce;
+			
+				//We treat the units hit once
+				if($amountUnitHitOnce > 1.0)
+				{
+					$this->ackImpact($amountUnitHitOnce, $combinedPower, $combined);
+					$amountHit -= $amountUnitHitOnce;
+				}
+				elseif($amountUnitHitMoreThanOnce <= 1)
+					break;
+				else
+					$amountUnitHitMoreThanOnce += $amountUnitHitOnce;
+			
+				//And increase the power by combining the shots for the next loop iteration
+				$amountHit /= 2;
+				$amountUnitHit = $amountUnitHitMoreThanOnce;
+				$combinedPower *= 2;
+				$combined *= 2;
+			}
+		
+			//Process residuals
+			//Being here means there is less than one unit left unmanaged but some 
+			//	fire power left. We manage it.
+			if($amountHit > 0 && $amountUnitHit > 0)
+			{
+				$combinedPower *= $amountHit/$amountUnitHit;
+				$combined *= $amountHit/$amountUnitHit;
+				$this->ackImpact($amountUnitHit, $combinedPower, $combined);
+			}	
 		}
 
 		$this->debug( "Receive wave end with ".number_format($this->amountUnitTemp(), 1)." units left<br/>" );
@@ -257,7 +265,7 @@ class Group extends Debug{
 		{
 			$div = $this->m_divArrTemp[$i];
 			if($div->m_amount > 0)
-				$this->debug( "_Division ".$i." ".number_format($this->getTopIntegrityForDiv($i), 2)." : ".number_format($div->m_amount, 2)." (Integrity of ".number_format($div->integrityNorm(), 2).")<br/>" );
+				$this->debug( "_Division ".$i." ".number_format($this->getTopIntegrityForDiv($i), 2)." : ".number_format($div->m_amount, 3)." (Integrity of ".number_format($div->integrityNorm(), 2).")<br/>" );
 		}
 		$this->debug( "<br/>".PHP_EOL );
 	}
@@ -321,7 +329,7 @@ class Group extends Debug{
 		//Manage stables
 		for($i = 0; $i < count($this->m_divArr); $i++)
 		{
-			if($this->m_divArrInWave[$i]->m_amount > 0)
+			if($this->m_divArrInWave[$i]->m_amount / $amountInWave > 0.01)
 			{
 				$affected = $p_amount * $this->m_divArrInWave[$i]->m_amount / $amountInWave;
 
@@ -344,23 +352,27 @@ class Group extends Debug{
 					if($combined > 0)
 						for($j = 1; $j <= $p_combined; $j++) //Find a way to get rid of this for loop, time consuming
 							$nonExplodingRatio *= $integrityNorm-($consumedIntegrity*$j)/$p_combined;
-					if($combined % 1.0 != 0.0)
+					if($first % 1.0 != 0.0)
 						$nonExplodingRatio *= $integrityNorm-$consumedIntegrity/$p_combined; //TODO remove p_combined from equation I think
 				}
+				$nonExplodingRatio = max(0.0, $nonExplodingRatio);
 		
 				$explodingRatio = 1 - $nonExplodingRatio;
 			
 				$nonExploding = $affected * $nonExplodingRatio;
 		
-				$destDivId = $this->getDivIDFromIntegrityNorm($integrityNorm - $consumedIntegrity);
+				$integrityLeft = max(0.0, $integrityNorm - $consumedIntegrity);
+				$destDivId = $this->getDivIDFromIntegrityNorm($integrityLeft);
+				$this->debug( "_Dest : ".$destDivId." (".$i.") (".$integrityNorm.")<br/>" );
 		
 				$this->m_divArrTemp[$i]->m_amount -= $affected;
 				$this->m_divArrTemp[$i]->m_integrity -= $affected * $integrityNorm;
 		
 				$this->m_divArrTemp[$destDivId]->m_amount += $nonExploding;
-				$this->m_divArrTemp[$destDivId]->m_integrity += $nonExploding * ($integrityNorm-$consumedIntegrity);
+				$this->m_divArrTemp[$destDivId]->m_integrity += $nonExploding * ($integrityLeft);
 		
-				$this->debug( "_Explosions : ".number_format($affected * $explodingRatio, 2)." : ".number_format($explodingRatio, 2)."<br/>" );
+				if($affected * $explodingRatio > 0)
+					$this->debug( "_Explosions : ".number_format($affected * $explodingRatio, 2)." : ".number_format($explodingRatio, 2)."<br/>" );
 			}
 		}
 	}
