@@ -4,6 +4,8 @@ include 'spec.php';
 include 'division.class.php';
 include 'debug.class.php';
 
+include 'invDistrib.php';
+
 //Here lies the magic 'woulouloouuuu....'
 
 //Core class of the project. A group is a set of unit of the same type, e.g. 100 Light Fighters.
@@ -29,36 +31,37 @@ include 'debug.class.php';
 
 class Group extends Debug{
 	public $m_model;
-	public $m_amountDiv;
 	public $m_divCoverage;
 	
-	public $m_divArr;
+	public $m_integArr;
 	
 	public $m_amountWShieldTemp;
 	public $m_shieldTemp;
-	public $m_divArrTemp;
+	public $m_integArrTemp;
+	public $m_shieldArrTemp;
 	
 	public $m_averageShieldInWave;
 	public $m_probaHitShieldInWave;
-	public $m_divArrInWave;
+	public $m_integArrInWave;
+	public $m_shieldArrInWave;
 	
 	public function __construct($p_model, $p_amount)
 	{
 		$this->m_model = $p_model;
-		$this->m_amountDiv = 30;
 		$this->m_divCoverage = 0.5;
 		
-		$this->m_divArr[0] = new Division($p_amount);
-		for($i = 1; $i < $this->m_amountDiv; $i++)
-			$this->m_divArr[$i] = new Division(0);
+		$amountIntegDiv = 15;
+		$this->m_integArr[0] = new Division($p_amount, 1.0);
+		for($i = 1; $i < $amountIntegDiv; $i++)
+			$this->m_integArr[$i] = new Division(0, 1.0);
 	}	
 	
 	public function __clone()
 	{
 		$this->m_model = $this->m_model;
 		
-		for($i = 0; $i < count($this->m_divArr); $i++)
-			$this->m_divArr[$i] = clone $this->m_divArr[$i];
+		for($i = 0; $i < count($this->m_integArr); $i++)
+			$this->m_integArr[$i] = clone $this->m_integArr[$i];
 	}
 	
 	//Gives the theoric rapidfire of the group against a set of groups
@@ -97,7 +100,7 @@ class Group extends Debug{
 	
 	public function setValue($p_coef)
 	{
-		foreach ($this->m_divArr as &$div)
+		foreach ($this->m_integArr as &$div)
 		{
 			$div->m_amount *= $p_coef;
 			$div->m_integrity *= $p_coef;
@@ -106,40 +109,48 @@ class Group extends Debug{
 	
 	public function amountUnit(){
 		$count = 0;
-		foreach ($this->m_divArr as &$div)
+		foreach ($this->m_integArr as &$div)
 			$count += $div->m_amount;
 		return $count;
 	}
 	
 	public function amountUnitTemp(){
 		$count = 0;
-		foreach ($this->m_divArrTemp as &$div)
+		foreach ($this->m_integArrTemp as &$div)
 			$count += $div->m_amount;
 		return $count;
 	}
 	
 	public function amountUnitInWave(){
 		$count = 0;
-		foreach ($this->m_divArrInWave as &$div)
+		foreach ($this->m_integArrInWave as &$div)
 			$count += $div->m_amount;
 		return $count;
 	}
 	
 	public function getTopIntegrityForDiv($p_id){
-		return $this->m_divCoverage * (count($this->m_divArr) - $p_id) / count($this->m_divArr) + (1.0 - $this->m_divCoverage);
+		return $this->m_divCoverage * (count($this->m_integArr) - $p_id) / count($this->m_integArr) + (1.0 - $this->m_divCoverage);
 	}
 	
 	public function getDivIDFromIntegrityNorm($p_integrityNorm){
-		return round((count($this->m_divArr) - 1) * (1.0 - (max($p_integrityNorm - (1.0 - $this->m_divCoverage), 0.0) / $this->m_divCoverage)));
+		return round((count($this->m_integArr) - 1) * (1.0 - (max($p_integrityNorm - (1.0 - $this->m_divCoverage), 0.0) / $this->m_divCoverage)));
 	}
 	
 	//Store the current stats in temporary variables that can be modified without affecting the class
 	public function initRound()
 	{
+		//old shield design
 		$this->m_amountWShieldTemp = $this->amountUnit();
 		$this->m_shieldTemp = $this->m_model->shield()*$this->amountUnit();
-		foreach ($this->m_divArr as $i => $stable)
-			$this->m_divArrTemp[$i] = clone $stable;
+		
+		//Integrity
+		foreach ($this->m_integArr as $i => $div)
+			$this->m_integArrTemp[$i] = clone $div;
+			
+		//Shield
+		$this->m_shieldArrTemp[0] = new Division($this->amountUnit());
+		for($i = 1; $i < 5; $i++)
+			$this->m_shieldArrTemp[$i] = new Division(0);
 	}
 	
 	//Part of a round, which is just a set of fires of different magnitudes
@@ -149,27 +160,13 @@ class Group extends Debug{
 		{
 			return; //Deflected TODO wrong
 		}
-		if($this->amountUnitTemp() < 1)
-		{
-			return; //Deaaad
-		}
 			
 		global $model;
 		$amountHit = $p_amountHit*$this->amountUnitTemp()/$this->amountUnit();
 		$amountUnit = $this->amountUnitTemp();
-		//The equation bellow comes from the necessity to know how many different
-		//	targets have been hit.
-		//When firing 1000 times on a set of 2000 units, the amount of different
-		//	units hit is not 1000.
-		//This amount comes from this numerical equation :
-		//f(n) = f(n-1) + (2000 - f(n))/2000, f(0) = 0 and getting f(1000)
-		//However it is not computationally effcicient
-		//Hopefully Wolfram exists and gives you the recurrence equation right away
-		//f(n) = 2000 * (1 + ((2000-1)/2000)^n)
-		//For x units and n shots the equation is then
-		//f(n) = x * (1 + ((x-1)/x)^n)
-		//Giving the amount of unit hit at least once
-		$amountUnitHit = $amountUnit * ( 1 - pow(($amountUnit-1)/$amountUnit, $amountHit));
+		$amountUnitHit = $amountUnit * ( 1 - 1/exp($amountHit/$amountUnit)); //Magiiiic
+		if($amountUnitHit == 0)
+			return;
 		
 		$this->debug( "Receive wave begin on ".$this->m_model->name()." (".number_format($this->amountUnitTemp(), 2)." units) <br/>
 			_Amount of shots : ".number_format($amountHit, 2)." <br/>
@@ -187,21 +184,90 @@ class Group extends Debug{
 		else
 			$this->m_averageShieldInWave = 0;
 		$this->m_probaHitShieldInWave = $this->m_amountWShieldTemp/$this->amountUnitTemp();
-		foreach ($this->m_divArrTemp as $i => $stableTemp)
-			$this->m_divArrInWave[$i] = clone $stableTemp;
+		foreach ($this->m_integArrTemp as $i => $divTemp)
+			$this->m_integArrInWave[$i] = clone $divTemp;
+		foreach ($this->m_shieldArrTemp as $i => $divTemp)
+			$this->m_shieldArrInWave[$i] = clone $divTemp;
 	
-		if($amountHit / $amountUnit >= 10)
+		$prop = $amountHit / $amountUnit;
+		$amountHitLeft = $amountHit - $amountUnitHit;
+		if($amountHitLeft / $amountUnitHit >= 1)
 		{
-			$r = $amountHit / $amountUnit;
-			$gaussiaSpan = 25.0 * sqrt($r / 50.0);
-			$distributionArr = array(-0.38, -0.16, 0.0, 0.16, 0.38);
-			foreach($distributionArr as $d)
+			global $g_invDistribution;
+			global $g_countInvDistribution;
+			
+			$proportionTouchedOnceOrMore = 1 - 1/exp($prop);
+			$proportion = $amountHitLeft/$amountUnitHit;
+			$proportionNotTouchedMore = 1/exp($proportion);
+			
+			$this->ackImpact(
+					$amountUnitHit * $proportionNotTouchedMore, 
+					$p_power, 
+					1.0);
+					
+			$startInvDist = $proportionNotTouchedMore;
+			$startCumGauss = $g_invDistribution[floor($startInvDist*$g_countInvDistribution)];
+			$span = 2.84*pow(5.0 * $proportion, 0.5);
+			$leftSpan = min($span/2, $proportion);
+			$startCombined = $proportion - $leftSpan;
+			//$this->debug("__prop : " . $prop . "__<br/>");
+			//$this->debug("__proportion : " . $proportion . "__<br/>");
+			//$this->debug("__span : " . $span . "__<br/>");
+			//$this->debug("__startCombined : " . $startCombined . "__<br/>");
+			//$this->debug("__startInvDist : " . $startInvDist . "__<br/>");
+			//$this->debug("__startCumGauss : " . $startCumGauss . "__<br/>");
+			//$this->debug("__proportionTouchedOnceOrMore : " . $proportionTouchedOnceOrMore . "__<br/>");
+			//$this->debug("__proportionNotTouchedMore : " . $proportionNotTouchedMore . "__<br/>");
+			
+			$div = 4;
+			
+			$propOnce = $proportionTouchedOnceOrMore * $proportionNotTouchedMore / $prop;
+			$propMore = 0;
+			$addOn = array();
+	
+			//manage gaussian
+			$coverageFractal = 3;
+			$covered = 0;
+			$coverage = array();
+			for($i = $div-1; $i >= 0; $i--)
 			{
-				$this->ackImpact(
-					$amountUnit / 5.0, 
-					$p_power * ($r + $gaussiaSpan*$d), 
-					$r + $gaussiaSpan*$d);
+				$newCoverage = 1.0 / pow($coverageFractal, $i);
+				$halfPoint = (1.0 - $covered)/2.0 + (1.0 - $newCoverage)/2.0;
+				$cumGauss = $g_invDistribution[floor(($halfPoint * (1.0 - $startInvDist) + $startInvDist)*$g_countInvDistribution)];
+				$addOn[$i] = 1.0 + $startCombined + $span*($cumGauss - $startCumGauss)/(1.0 - $startCumGauss);
+				$coverage[$i] = ($newCoverage - $covered);
+				//$this->debug("__Coverage : " . $coverage[$i] . "__<br/>");
+				//$this->debug("__HalfPoint : " . $halfPoint . "__<br/>");
+				//$this->debug("__AddOn : " . $addOn[$i] . "__<br/>");
+				$propMore += $addOn[$i] * ($proportionTouchedOnceOrMore * (1 - $proportionNotTouchedMore) * ($newCoverage - $covered)) / $prop;
+				$covered = $newCoverage;
 			}
+			
+			
+			//$this->debug("__PropOnce : " . $propOnce . "__<br/>");
+			//$this->debug("__PropMore : " . $propMore . "__<br/>");
+			$balance = (1 - $propOnce) / $propMore;
+			//$this->debug("__Balance : " . $balance . "__<br/>");
+			for($i = 0; $i < $div; $i++)
+			{
+				$addOn[$i] *= $balance;
+			}
+			//$subtBalance = (1 - $propOnce) - $propMore;
+			//$coverageFirstAddOn = 1.0 - 1.0 / $coverageFractal;
+			//$addOn[0] += $subtBalance / (($proportionTouchedOnceOrMore * (1 - $proportionNotTouchedMore) * $coverageFirstAddOn) / $prop);
+			
+			$total = 0;
+			for($i = 0; $i < $div; $i++)
+			{
+				//$this->debug("__" . floor(((1+2*$i)*$halfPartCoverage + $proportionNotTouchedMore)*$g_countInvDistribution) . "__<br/>");
+				
+				$total += $addOn[$i] * ($amountUnitHit * (1.0 - $proportionNotTouchedMore) * $coverage[$i]);
+				$this->ackImpact(
+					$amountUnitHit * (1.0 - $proportionNotTouchedMore) * $coverage[$i], 
+					$p_power * $addOn[$i], 
+					$addOn[$i]);
+			}
+			$this->debug("__TOTAL : " . $total . "__<br/>");
 		}
 		else
 		{
@@ -261,9 +327,9 @@ class Group extends Debug{
 		}
 
 		$this->debug( "Receive wave end with ".number_format($this->amountUnitTemp(), 1)." units left<br/>" );
-		for($i = 0; $i < count($this->m_divArrTemp); $i++)
+		for($i = 0; $i < count($this->m_integArrTemp); $i++)
 		{
-			$div = $this->m_divArrTemp[$i];
+			$div = $this->m_integArrTemp[$i];
 			if($div->m_amount > 0)
 				$this->debug( "_Division ".$i." ".number_format($this->getTopIntegrityForDiv($i), 2)." : ".number_format($div->m_amount, 3)." (Integrity of ".number_format($div->integrityNorm(), 2).")<br/>" );
 		}
@@ -273,7 +339,7 @@ class Group extends Debug{
 	//Acknoledge a number of distinct units hit with a certain combined power.
 	//Each unit hit in ackImpact in the same wave is distinct. Condition that MUST
 	//	be certified in receiveWave.
-	private function ackImpact($p_amountHit, $p_power, $p_combined)
+	/*private function ackImpact($p_amountHit, $p_power, $p_combined)
 	{
 		//No use continuing with a group wiped out
 		if($this->amountUnitTemp() <= 0)
@@ -292,20 +358,20 @@ class Group extends Debug{
 			$this->affectIntegrity($p_amountHit - $amountHitOnShield, $p_power, $p_combined);
 		}
 			
-		if($amountHitOnShield > 0.01)
+		if($amountHitOnShield > 0)
 		{
 			//Shield effect
 			$absorbed = min($this->m_averageShieldInWave, $p_power);
 		
 			$this->m_shieldTemp -= $amountHitOnShield*$absorbed;
-			$this->debug( "_Power deflected : ".number_format(100*$absorbed/$p_power, 2)."% <br/>" );
 			$p_power -= $absorbed;
+			$this->debug( "_Power left : ".number_format($p_power, 2)." <br/>" );
 		
 			//Direct hit after absorbtion (must trigger even with null power for
 			//	explosion)
-			$unstableTempBefore = $this->m_divArrTemp[count($this->m_divArrTemp)-1]->m_amount;
+			$unstableTempBefore = $this->m_integArrTemp[count($this->m_integArrTemp)-1]->m_amount;
 			$this->affectIntegrity($amountHitOnShield, $p_power, $p_combined);
-			$unstableTempAfter =  $this->m_divArrTemp[count($this->m_divArrTemp)-1]->m_amount;
+			$unstableTempAfter =  $this->m_integArrTemp[count($this->m_integArrTemp)-1]->m_amount;
 		
 			//Reduce the number of unit with shield if all has been consumed
 			if($absorbed > 0 && $absorbed == $this->m_averageShieldInWave)
@@ -313,27 +379,71 @@ class Group extends Debug{
 			else
 				$this->m_amountWShieldTemp -= $unstableTempBefore - $unstableTempAfter;
 		}
+	}*/
+	
+	private function ackImpact($p_amount, $p_power, $p_combined)
+	{
+		//No use continuing with a group wiped out
+		if($this->amountUnitTemp() <= 0)
+			return;
+			
+		$this->debug( "Unit hit ".number_format($p_combined, 1)." times (".number_format($p_amount, 2)." units with ".number_format($p_amount*$p_combined, 2)." shots)<br/>
+			_Power received : ".number_format($p_amount * $p_power)." (".number_format($p_power)." each)<br/>".PHP_EOL );	
+		
+		$amountInWave = $this->amountUnitInWave();
+		if($amountInWave == 0)
+			return;
+		
+		for($i = 0; $i < count($this->m_shieldArrTemp); $i++)
+		{
+			if($this->m_shieldArrInWave[$i]->m_amount / $amountInWave > 0)
+			{
+				$affected = $p_amount * $this->m_shieldArrInWave[$i]->m_amount / $amountInWave;
+				$shieldNorm = $this->m_shieldArrInWave[$i]->integrityNorm();
+				//$this->debug( "_Shield norm : ".number_format($shieldNorm, 2)." <br/>" );
+		
+				//Shield effect
+				$consumedShield = min($shieldNorm, $p_power/$this->m_model->shield());
+				$power = $p_power - $consumedShield * $this->m_model->shield();
+				$this->debug( "_Power left : ".number_format($power, 2)." <br/>" );
+			
+				//Displace data structure
+				$shieldLeft = max(0.0, $shieldNorm - $consumedShield);
+				$destDivId = round((count($this->m_shieldArrTemp) - 1) * (1.0 - $shieldLeft));
+				//$this->debug( "_Shield div destination : ".$destDivId."<br/>" );
+	
+				//Direct hit after absorbtion (must trigger even with null power for explosion)
+				$unitLost = $this->affectIntegrity($affected, $power, $p_combined);
+	
+				$this->m_shieldArrTemp[$i]->m_amount -= $affected;
+				$this->m_shieldArrTemp[$i]->m_integrity -= $affected * $shieldNorm;
+	
+				$this->m_shieldArrTemp[$destDivId]->m_amount += ($affected - $unitLost);
+				$this->m_shieldArrTemp[$destDivId]->m_integrity += ($affected - $unitLost) * ($shieldLeft);
+			}
+		}
 	}
 	
 	//Acknoledge a number of distinct units hit with a certain combined power.
 	// Will now affect the integrity and wmount of unit.
 	public function affectIntegrity($p_amount, $p_power, $p_combined)
 	{				
+		$unitDestroyed = 0;
 		//Integrity consumed by the hit
 		$consumedIntegrity = $p_power/$this->m_model->hull();
 		
 		$amountInWave = $this->amountUnitInWave();
 		if($amountInWave == 0)
-			return;
+			return $unitDestroyed;
 		
 		//Manage stables
-		for($i = 0; $i < count($this->m_divArr); $i++)
+		for($i = 0; $i < count($this->m_integArr); $i++)
 		{
-			if($this->m_divArrInWave[$i]->m_amount / $amountInWave > 0.01)
+			if($this->m_integArrInWave[$i]->m_amount / $amountInWave > 0)
 			{
-				$affected = $p_amount * $this->m_divArrInWave[$i]->m_amount / $amountInWave;
+				$affected = $p_amount * $this->m_integArrInWave[$i]->m_amount / $amountInWave;
 
-				$integrityNorm = $this->m_divArrInWave[$i]->integrityNorm();
+				$integrityNorm = $this->m_integArrInWave[$i]->integrityNorm();
 		
 				$offExplosion = max(0, $integrityNorm - 0.7);
 				$combined = $p_combined;
@@ -363,25 +473,30 @@ class Group extends Debug{
 		
 				$integrityLeft = max(0.0, $integrityNorm - $consumedIntegrity);
 				$destDivId = $this->getDivIDFromIntegrityNorm($integrityLeft);
-				$this->debug( "_Dest : ".$destDivId." (".$i.") (".$integrityNorm.")<br/>" );
+				//$this->debug( "_Integrity div destination : ".$destDivId."<br/>" );
 		
-				$this->m_divArrTemp[$i]->m_amount -= $affected;
-				$this->m_divArrTemp[$i]->m_integrity -= $affected * $integrityNorm;
+				$this->m_integArrTemp[$i]->m_amount -= $affected;
+				$this->m_integArrTemp[$i]->m_integrity -= $affected * $integrityNorm;
 		
-				$this->m_divArrTemp[$destDivId]->m_amount += $nonExploding;
-				$this->m_divArrTemp[$destDivId]->m_integrity += $nonExploding * ($integrityLeft);
+				$this->m_integArrTemp[$destDivId]->m_amount += $nonExploding;
+				$this->m_integArrTemp[$destDivId]->m_integrity += $nonExploding * ($integrityLeft);
 		
 				if($affected * $explodingRatio > 0)
-					$this->debug( "_Explosions : ".number_format($affected * $explodingRatio, 2)." : ".number_format($explodingRatio, 2)."<br/>" );
+				{
+					$unitDestroyed += $affected * $explodingRatio;
+					//$this->debug( "_Explosions : ".number_format($affected * $explodingRatio, 2)." : ".number_format($explodingRatio, 2)."<br/>" );
+				}
 			}
 		}
+		
+		return $unitDestroyed;
 	}
 	
 	//Modify the group according to the temporary changes made
 	public function applyRound()
 	{
-		foreach ($this->m_divArrTemp as $i => $stableTemp)
-			$this->m_divArr[$i] = clone $stableTemp;
+		foreach ($this->m_integArrTemp as $i => $stableTemp)
+			$this->m_integArr[$i] = clone $stableTemp;
 	}
 };
 ?>

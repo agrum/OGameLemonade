@@ -52,16 +52,7 @@ class Fleet extends Debug {
 		
 		foreach($this->m_groupArr as &$group)
 		{
-			foreach($group->m_divArr as &$div)
-			{
-				$div *= $changeCoef;
-			}
-			foreach($group->m_divIntegrityArr as &$divIntegrity)
-			{
-				$divIntegrity *= $changeCoef;
-			}
-			$group->m_unstable *= $changeCoef;
-			$group->m_unstableIntegrity *= $changeCoef;
+			$group->setValue($changeCoef);
 		}
 	}
 	
