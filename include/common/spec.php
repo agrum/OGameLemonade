@@ -1,10 +1,10 @@
 <?php
 
-include "../include/unitSpec.class.php";
+include_once "../include/unitSpec.class.php";
 if( isset($_GET['lang']) && file_exists("../include/".$_GET['lang']."/lang.php") )
-	include "../include/".$_GET['lang']."/lang.php";
+	include_once "../include/".$_GET['lang']."/lang.php";
 else
-	include "../include/fr/lang.php";
+	include_once "../include/fr/lang.php";
 
 //All unit specifications.
 //The units' id are stored in th $short global variable

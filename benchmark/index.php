@@ -13,31 +13,32 @@ $cristalDisp = isset($_POST['cristal']) ? $_POST['cristal'] : 2;
 $deutDisp = isset($_POST['deut']) ? $_POST['deut'] : 1;
 $ratioDisp = isset($_POST['ratio']) ? $_POST['ratio'] : 100;
 
+$unitInputSpec = 'autocomplete="off" type="number" size="9" maxlength="9"';
 $compositionTable =
 '<table><tr><td>
 
 <table class="composition">
 <form action="" method="post">
 	<tr><th>Unite</th><th></th><th>Composition</th></tr>
-	<tr><td>'.$name[$ligFi].'</td><td> : </td><td><input name="'.$ligFi.'" value="'.@$_POST[$ligFi].'"/></td></tr>
-	<tr><td>'.$name[$heaFi].'</td><td> : </td><td><input name="'.$heaFi.'" value="'.@$_POST[$heaFi].'"/></td></tr>
-	<tr><td>'.$name[$cruis].'</td><td> : </td><td><input name="'.$cruis.'" value="'.@$_POST[$cruis].'"/></td></tr>
-	<tr><td>'.$name[$batSh].'</td><td> : </td><td><input name="'.$batSh.'" value="'.@$_POST[$batSh].'"/></td></tr>
-	<tr><td>'.$name[$batCr].'</td><td> : </td><td><input name="'.$batCr.'" value="'.@$_POST[$batCr].'"/></td></tr>
-	<tr><td>'.$name[$bombe].'</td><td> : </td><td><input name="'.$bombe.'" value="'.@$_POST[$bombe].'"/></td></tr>
-	<tr><td>'.$name[$destr].'</td><td> : </td><td><input name="'.$destr.'" value="'.@$_POST[$destr].'"/></td></tr>
-	<tr><td>'.$name[$death].'</td><td> : </td><td><input name="'.$death.'" value="'.@$_POST[$death].'"/></td></tr>
+	<tr><td>'.$name[$ligFi].'</td><td> : </td><td><input name="'.$ligFi.'" value="'.@$_POST[$ligFi].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$heaFi].'</td><td> : </td><td><input name="'.$heaFi.'" value="'.@$_POST[$heaFi].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$cruis].'</td><td> : </td><td><input name="'.$cruis.'" value="'.@$_POST[$cruis].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$batSh].'</td><td> : </td><td><input name="'.$batSh.'" value="'.@$_POST[$batSh].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$batCr].'</td><td> : </td><td><input name="'.$batCr.'" value="'.@$_POST[$batCr].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$bombe].'</td><td> : </td><td><input name="'.$bombe.'" value="'.@$_POST[$bombe].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$destr].'</td><td> : </td><td><input name="'.$destr.'" value="'.@$_POST[$destr].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$death].'</td><td> : </td><td><input name="'.$death.'" value="'.@$_POST[$death].'" '.$unitInputSpec.'/></td></tr>
 	<tr><td colspan="4">|</td></tr>
-	<tr><td>'.$name[$probe].'</td><td> : </td><td><input name="'.$probe.'" value="'.@$_POST[$probe].'"/></td></tr>
-	<tr><td>'.$name[$smCar].'</td><td> : </td><td><input name="'.$smCar.'" value="'.@$_POST[$smCar].'"/></td></tr>
-	<tr><td>'.$name[$laCar].'</td><td> : </td><td><input name="'.$laCar.'" value="'.@$_POST[$laCar].'"/></td></tr>
+	<tr><td>'.$name[$probe].'</td><td> : </td><td><input name="'.$probe.'" value="'.@$_POST[$probe].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$smCar].'</td><td> : </td><td><input name="'.$smCar.'" value="'.@$_POST[$smCar].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$laCar].'</td><td> : </td><td><input name="'.$laCar.'" value="'.@$_POST[$laCar].'" '.$unitInputSpec.'/></td></tr>
 	<tr><td colspan="4">|</td></tr>
-	<tr><td>'.$name[$roLau].'</td><td> : </td><td><input name="'.$roLau.'" value="'.@$_POST[$roLau].'"/></td></tr>
-	<tr><td>'.$name[$liLas].'</td><td> : </td><td><input name="'.$liLas.'" value="'.@$_POST[$liLas].'"/></td></tr>
-	<tr><td>'.$name[$heLas].'</td><td> : </td><td><input name="'.$heLas.'" value="'.@$_POST[$heLas].'"/></td></tr>
-	<tr><td>'.$name[$ionCa].'</td><td> : </td><td><input name="'.$ionCa.'" value="'.@$_POST[$ionCa].'"/></td></tr>
-	<tr><td>'.$name[$gauss].'</td><td> : </td><td><input name="'.$gauss.'" value="'.@$_POST[$gauss].'"/></td></tr>
-	<tr><td>'.$name[$plasm].'</td><td> : </td><td><input name="'.$plasm.'" value="'.@$_POST[$plasm].'"/></td></tr>
+	<tr><td>'.$name[$roLau].'</td><td> : </td><td><input name="'.$roLau.'" value="'.@$_POST[$roLau].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$liLas].'</td><td> : </td><td><input name="'.$liLas.'" value="'.@$_POST[$liLas].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$heLas].'</td><td> : </td><td><input name="'.$heLas.'" value="'.@$_POST[$heLas].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$ionCa].'</td><td> : </td><td><input name="'.$ionCa.'" value="'.@$_POST[$ionCa].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$gauss].'</td><td> : </td><td><input name="'.$gauss.'" value="'.@$_POST[$gauss].'" '.$unitInputSpec.'/></td></tr>
+	<tr><td>'.$name[$plasm].'</td><td> : </td><td><input name="'.$plasm.'" value="'.@$_POST[$plasm].'" '.$unitInputSpec.'/></td></tr>
 	<tr><td></td><td></td><td></td><td></td></tr>
 	<tr><td>Taux</td><td> : </td><td><input name="metal" size="1" value="'.$metalDisp.'"/> / <input name="cristal" size="1" value="'.$cristalDisp.'"/> / <input name="deut" size="1" value="'.$deutDisp.'"/></td></tr>
 	<tr><td>Moyens ennemis</td><td> : </td><td><input name="ratio" size="3" value="'.$ratioDisp.'"/> %</td></tr>

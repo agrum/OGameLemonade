@@ -1,6 +1,6 @@
 <?php
 
-include 'group.class.php';
+include_once 'group.class.php';
 
 class Fleet extends Debug {
 	public $m_groupArr;
@@ -13,13 +13,14 @@ class Fleet extends Debug {
 	
 	public function __clone()
 	{
-		for($i = 0; $i < count($this->m_groupArr); $i++)
-			$this->m_groupArr[$i] = clone $this->m_groupArr[$i];
+		foreach($this->m_groupArr as $s => $group)
+			$this->m_groupArr[$s] = clone $group;
 	}
 	
 	public function rapidFireFrom($p_model)
 	{
-		$group = new Group($p_model, 1);
+		$tech = array(0, 0, 0);
+		$group = new Group($p_model, 1, $tech);
 		
 		return $group->rapidFire($this->m_groupArr);
 	}
@@ -38,9 +39,9 @@ class Fleet extends Debug {
 	{
 		$value = 0;
 		
-		for($i = 0; $i < count($this->m_groupArr); $i++)
+		foreach($this->m_groupArr as &$group)
 		{
-			$value += $this->m_groupArr[$i]->value();
+			$value += $group->value();
 		}
 		
 		return $value;
@@ -86,9 +87,9 @@ class Fleet extends Debug {
 	}
 		
 	private function isDestroyed(){
-		for($i = 0; $i < count($this->m_groupArr); $i++)
+	foreach($this->m_groupArr as $group)
 		{
-			if($this->m_groupArr[$i]->amountUnit() > 0)
+			if($group->amountUnit() > 0)
 				return false;
 		}
 		
@@ -97,15 +98,18 @@ class Fleet extends Debug {
 	
 	private function initRound()
 	{
-		for($i = 0; $i < count($this->m_groupArr); $i++)
+		foreach($this->m_groupArr as $group)
 		{
-			$this->m_groupArr[$i]->initRound();
+			$group->initRound();
 		}
 	}
 	
 	private function attackedFrom($p_fleet){
 		foreach($p_fleet->m_groupArr as $attackingGroup)
-		{				
+		{		
+			if($attackingGroup->amountUnitTemp() <= 0.0)
+				continue;
+				
 			$amountDefendingUnit = 0;
 			foreach($this->m_groupArr as $defendingGroup)
 				$amountDefendingUnit += $defendingGroup->amountUnit();
@@ -113,7 +117,7 @@ class Fleet extends Debug {
 			$shots = $attackingGroup->amountUnit() * $attackingGroup->rapidFire($this->m_groupArr);
 			foreach($this->m_groupArr as $defendingGroup)
 			{			
-				if($defendingGroup->amountUnitTemp() < 0.01)
+				if($defendingGroup->amountUnitTemp() <= 0.0)
 					continue;
 			
 				$proportion = $defendingGroup->amountUnit()/$amountDefendingUnit;
@@ -124,9 +128,9 @@ class Fleet extends Debug {
 	
 	private function applyRound()
 	{
-		for($i = 0; $i < count($this->m_groupArr); $i++)
+		foreach($this->m_groupArr as $group)
 		{
-			$this->m_groupArr[$i]->applyRound();
+			$group->applyRound();
 		}
 	}
 };

@@ -13,6 +13,9 @@ class UnitSpec {
 	private $m_hull;
 	private $m_shield;
 	private $m_power;
+	private $m_techHull;
+	private $m_techShield;
+	private $m_techPower;
 	private $m_rapidfireArray;
 
 	public function __construct(
@@ -37,6 +40,9 @@ class UnitSpec {
 		$this->m_hull = $p_hull;
 		$this->m_shield = $p_shield;
 		$this->m_power = $p_power;
+		$this->m_techHull = 0;
+		$this->m_techShield = 0;
+		$this->m_techPower = 0;
 		$this->m_rapidfireArray = $p_rapidfireArray;
 	}
 	
@@ -70,18 +76,25 @@ class UnitSpec {
 		return $this->m_metal*$g_deut/$g_metal + $this->m_cristal*$g_deut/$g_cristal + $this->m_deut;
 	}
 	public function hull() { 
-		return $this->m_hull; 
+		return $this->m_hull * (1.0 + $this->m_techHull / 10.0); 
 	}
 	public function shield() { 
-		return $this->m_shield; 
+		return $this->m_shield * (1.0 + $this->m_techShield / 10.0); 
 	}
 	public function power() { 
-		return $this->m_power; 
+		return $this->m_power * (1.0 + $this->m_techPower / 10.0); 
 	}
 	public function rapidfireAgainst($p_unitShortName) {
 		if(isset($this->m_rapidfireArray[$p_unitShortName]))
 			return $this->m_rapidfireArray[$p_unitShortName];
 		return 1; 
+	}
+	
+	public function setTech($p_weapon, $p_shield, $p_hull)
+	{
+		$this->m_techHull = $p_hull;
+		$this->m_techShield = $p_shield;
+		$this->m_techPower = $p_weapon;
 	}
 }
 

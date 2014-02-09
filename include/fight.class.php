@@ -1,15 +1,17 @@
 <?php
 
-include 'common'.(isset($_GET['classic']) ? "Classic" : "" ).'/fleet.class.php';
+include_once 'common/fleet.class.php';
 
 class Fight {
-	private $m_fleetA;
-	private $m_fleetB;
+	public $m_fleetA;
+	public $m_fleetB;
+	public $m_fleetAAfter;
+	public $m_fleetBAfter;
 
 	public function __construct($p_fleetA, $p_fleetB)
 	{
-		$this->m_fleetA = $p_fleetA;
-		$this->m_fleetB = $p_fleetB;
+		$this->m_fleetA = clone $p_fleetA;
+		$this->m_fleetB = clone $p_fleetB;
 	}
 	
 	public function encounterInformation()
@@ -54,11 +56,11 @@ class Fight {
 		$valueBefore = 0;
 		$valueAfter = 0;
 	
-		for($i = 0; $i < count($p_fleetInitial->m_groupArr); $i++)
+		foreach($p_fleetInitial->m_groupArr as $s => $meh)
 		{
-			$valueBefore += $p_fleetInitial->m_groupArr[$i]->value();
-			$valueAfter += $p_fleetAfterFight->m_groupArr[$i]->value();
-			$valueAfter += ($p_fleetInitial->m_groupArr[$i]->value() - $p_fleetAfterFight->m_groupArr[$i]->value())*($p_fleetInitial->m_groupArr[$i]->m_model->isShip() ? 0.3 : 0.7);
+			$valueBefore += $p_fleetInitial->m_groupArr[$s]->value();
+			$valueAfter += $p_fleetAfterFight->m_groupArr[$s]->value();
+			$valueAfter += ($p_fleetInitial->m_groupArr[$s]->value() - $p_fleetAfterFight->m_groupArr[$s]->value())*($p_fleetInitial->m_groupArr[$s]->m_model->isShip() ? 0.3 : 0.7);
 		}
 		return 0.000035 + $valueAfter/$valueBefore;
 	}
@@ -83,17 +85,24 @@ class Fight {
 		for($o = 0; $o < count($fleetInitial); $o++){
 			$record['compo'.$o] = $fleetAfterFight[$o]->m_groupArr;
 			$record['compo'.$o.'Str'] = $fleetAfterFight[$o]->m_name;
-			for($i = 0; $i < count($fleetInitial[$o]->m_groupArr); $i++)
+			foreach($fleetInitial[$o]->m_groupArr as $s => $meh)
 			{
 				$record['compo'.$o.'Str'] .= 
 					PHP_EOL .
-					$fleetInitial[$o]->m_groupArr[$i]->m_model->name() . 
+					$fleetInitial[$o]->m_groupArr[$s]->m_model->name() . 
 					' : ' . 
-					number_format($fleetAfterFight[$o]->m_groupArr[$i]->amountUnit(), 1) .
+					number_format($fleetAfterFight[$o]->m_groupArr[$s]->amountUnit(), 1) .
 					' /  ' .
-					number_format($fleetInitial[$o]->m_groupArr[$i]->amountUnit(), 1);
+					number_format($fleetInitial[$o]->m_groupArr[$s]->amountUnit(), 1);
 			}
 		}
+		
+		///
+		
+		$this->m_fleetAAfter = clone $fleetAfterFight[0];
+		$this->m_fleetBAfter = clone $fleetAfterFight[1];
+		
+		///
 		
 		return $record;
 	}

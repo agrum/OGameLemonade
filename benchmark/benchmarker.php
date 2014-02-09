@@ -17,11 +17,13 @@ $g_metal = $_POST['metal'];
 $g_cristal = $_POST['cristal'];
 $g_deut = $_POST['deut'];
 
+$tech = array(0, 0, 0);
+
 $groupArr;
 $i = 0;
 foreach($short as $s)
 	if(array_key_exists($s, $_POST) && is_numeric($_POST[$s]) && $_POST[$s] > 0)
-		$groupArr[$i++] = new Group($model[$s], $_POST[$s]);
+		$groupArr[$s] = new Group($model[$s], $_POST[$s], $tech);
 $benchmarkedFleet = new Fleet($groupArr, "Tested");
 $benchmark = new Benchmark($benchmarkedFleet);
 

@@ -14,6 +14,7 @@ class Benchmark {
 	public function encounterInformation()
 	{
 		global $model;
+		$tech = array(0, 0, 0);
 		
 		//Get samples
 		$mysqli = connectDB("lemonade");
@@ -37,7 +38,7 @@ class Benchmark {
 					is_numeric($unitSplit[1]) && 
 					$unitSplit[1] > 0)
 				{
-					$groupArr[$i++] = new Group($model[$unitSplit[0]], $unitSplit[1]);
+					$groupArr[$i++] = new Group($model[$unitSplit[0]], $unitSplit[1], $tech);
 				}
 			}
 			
@@ -209,11 +210,11 @@ class Benchmark {
 		$valueBefore = 0;
 		$valueAfter = 0;
 	
-		for($i = 0; $i < count($p_fleetInitial->m_groupArr); $i++)
+		foreach($p_fleetInitial->m_groupArr as $s => $meh)
 		{
-			$valueBefore += $p_fleetInitial->m_groupArr[$i]->value();
-			$valueAfter += $p_fleetAfterFight->m_groupArr[$i]->value();
-			$valueAfter += ($p_fleetInitial->m_groupArr[$i]->value() - $p_fleetAfterFight->m_groupArr[$i]->value())*($p_fleetInitial->m_groupArr[$i]->m_model->isShip() ? 0.3 : 0.7);
+			$valueBefore += $p_fleetInitial->m_groupArr[$s]->value();
+			$valueAfter += $p_fleetAfterFight->m_groupArr[$s]->value();
+			$valueAfter += ($p_fleetInitial->m_groupArr[$s]->value() - $p_fleetAfterFight->m_groupArr[$s]->value())*($p_fleetInitial->m_groupArr[$s]->m_model->isShip() ? 0.3 : 0.7);
 		}
 		return 0.000035 + $valueAfter/$valueBefore;
 	}
@@ -244,15 +245,15 @@ class Benchmark {
 		for($o = 0; $o < count($fleetInitial); $o++){
 			$record['compo'.$o] = $fleetAfterFight[$o]->m_groupArr;
 			$record['compo'.$o.'Str'] = $p_fleetA->m_name;
-			for($i = 0; $i < count($fleetInitial[$o]->m_groupArr); $i++)
+			foreach($fleetInitial[$o]->m_groupArr as $s => $meh)
 			{
 				$record['compo'.$o.'Str'] .= 
 					PHP_EOL .
-					$fleetInitial[$o]->m_groupArr[$i]->m_model->name() . 
+					$fleetInitial[$o]->m_groupArr[$s]->m_model->name() . 
 					' : ' . 
-					number_format($fleetAfterFight[$o]->m_groupArr[$i]->amountUnit()) .
+					number_format($fleetAfterFight[$o]->m_groupArr[$s]->amountUnit()) .
 					' /  ' .
-					number_format($fleetInitial[$o]->m_groupArr[$i]->amountUnit());
+					number_format($fleetInitial[$o]->m_groupArr[$s]->amountUnit());
 			}
 		}
 		
