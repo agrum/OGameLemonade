@@ -1,0 +1,41 @@
+body {
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  background: #0C0909;
+  height: 100%;
+}
+
+.main-content {
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}
+
+a {
+	text-decoration: none;
+	color: white;
+}
+
+a:hover {
+	text-decoration: none;
+	color: #bcbcbc;
+}
+
+.main-page-header {
+  height: 150px;
+  background: #20181D;
+  padding-top: 30px;
+}
+
+.main-page-body {
+  padding: 50px;
+  height: calc(100% - 250px);
+}
+
+.main-page-footer {
+  height: 100px;
+  margin-bottom: 0px;
+  background: #150c11;
+  padding-top: 55px;
+}

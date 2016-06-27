@@ -1,0 +1,39 @@
+{
+  "name": "ogamelemonade",
+  "version": "1.0.0",
+  "description": "probabilistic fight simulator for OGame",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon ./bin/www"
+  },
+  "dependencies": {
+    "nodemon": "^1.9.1",
+    "backbone": "^1.3.3",
+    "body-parser": "~1.13.2",
+    "cookie-parser": "~1.3.5",
+    "debug": "~2.2.0",
+    "express": "~4.13.1",
+    "jade": "~1.11.0",
+    "mongoose": "~4.4.12",
+    "mongoose-deep-populate": "~3.0.0",
+    "morgan": "~1.6.1",
+    "serve-favicon": "~2.3.0",
+    "bcrypt": "^0.8.x"
+  },
+  "devDependencies": {
+    "bootstrap": "^3.3.6",
+    "grunt": "^1.0.1",
+    "grunt-contrib-uglify": "^1.0.1",
+    "grunt-contrib-watch": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agrum/OGameLemonade.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/agrum/OGameLemonade/issues"
+  },
+  "homepage": "https://github.com/agrum/OGameLemonade#readme"
+}

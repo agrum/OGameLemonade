@@ -1,0 +1,15 @@
+extends layout
+
+block body
+  .row.main-page-body
+    .col-xs-12.text-center
+      ul
+        each val in units
+          li= val
+
+block feet
+  script(type='text/javascript').
+    window.OGLemonade = {};
+    window.OGLemonade.units = #{units};
+    window.OGLemonade.presets = #{presets};
+  script(src='/views/index.js')

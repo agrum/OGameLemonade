@@ -1,0 +1,25 @@
+doctype html
+html
+  head
+    block head
+    title= title
+    link(rel='stylesheet', href='/stylesheets/bootstrap.css')
+    link(rel='stylesheet', href='/stylesheets/style.css')
+    script(src='/javascripts/lib/jquery-1.12.3.min.js')
+    script(src='/javascripts/lib/bootstrap.min.js')
+    script(src='/javascripts/lib/underscore.min.js')
+    script(src='/javascripts/lib/backbone.min.js')
+  body
+    .main-content
+      .row.main-page-header
+        .col-xs-12.text-center
+          img(src='/img/front.png')
+
+      block body
+
+      .row.main-page-footer
+        .col-xs-12.text-center
+          h4
+            a(href='https://github.com/agrum/OGameLemonade', target='_blank') agrum | 2013 - #{currentYear}
+
+    block scriptfeet
