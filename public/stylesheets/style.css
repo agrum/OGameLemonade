@@ -30,7 +30,7 @@ a:hover {
 
 .main-page-body {
   padding: 50px;
-  height: calc(100% - 250px);
+  min-height: calc(100% - 250px);
 }
 
 .main-page-footer {
@@ -38,4 +38,10 @@ a:hover {
   margin-bottom: 0px;
   background: #150c11;
   padding-top: 55px;
+}
+
+.form-control {
+  background-color: #111111;
+  color: #ccddc4;
+  border-color: #161616;
 }
