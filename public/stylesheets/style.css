@@ -1,7 +1,8 @@
 body {
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
-  background: #0C0909;
+  background: #121414;
   height: 100%;
+  color: #86B1BF;
 }
 
 .main-content {
@@ -22,26 +23,23 @@ a:hover {
 	color: #bcbcbc;
 }
 
-.main-page-header {
-  height: 150px;
-  background: #20181D;
-  padding-top: 30px;
-}
-
 .main-page-body {
   padding: 50px;
-  min-height: calc(100% - 250px);
+  min-height: calc(100% - 40px);
 }
 
 .main-page-footer {
-  height: 100px;
+  height: 40px;
   margin-bottom: 0px;
-  background: #150c11;
-  padding-top: 55px;
+  background: #22728C;
 }
 
-.form-control {
-  background-color: #111111;
-  color: #ccddc4;
-  border-color: #161616;
+.form-control, .input-group-addon {
+  background-color: #121819;
+  color: #62828C;
+  border-color: #1B2326;
+}
+
+.input-group-addon {
+  width: 150px;
 }

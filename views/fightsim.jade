@@ -2,21 +2,30 @@ extends layout
 
 block body
   .row.main-page-body
-    .col-xs-12.col-sm-6.col-md-4.text-center
+    .col-xs-12.col-sm-6.col-md-3.text-left
+      h1 OGameLemonade
+
+    .col-xs-12.col-sm-6.col-md-3.text-center
       ul
         each val in units
           if (val.isShip && val.canAttack)
-            input.form-control(type='number', placeholder='#{val.name}', title='#{val.name}')
-    .col-xs-12.col-sm-6.col-md-4.text-center
+            .input-group
+              span.input-group-addon #{val.name}
+              input.form-control(type='number', name='#{val.name}')
+    .col-xs-12.col-sm-6.col-md-3.text-center
       ul
         each val in units
           if (val.isShip && val.canAttack)
-            input.form-control(type='number', placeholder='#{val.name}', title='#{val.name}')
-    .col-xs-12.col-sm-6.col-md-4.text-center
+            .input-group
+              span.input-group-addon #{val.name}
+              input.form-control(type='number', name='#{val.name}')
+    .col-xs-12.col-sm-6.col-md-3.text-center
       ul
         each val in units
           if !val.canAttack
-            input.form-control(type='number', placeholder='#{val.name}', title='#{val.name}')
+            .input-group
+              span.input-group-addon #{val.name}
+              input.form-control(type='number', name='#{val.name}')
 
 block feet
   script(type='text/javascript').
