@@ -10,7 +10,7 @@ goog.require('ogl.util.Division');
 //At the construction,the integrity is set to 1.0, meaning 100%.
 //One rule of the fight in OGame is "If a ship has less than 70% of it's hull (here integrity)
 //	each consecutive hit (if not deflected) has a chance to make the unit explode". Since
-//	this simulator manage groups instead of stand alone units, this concept must be well managed.
+//	this simulator manages groups instead of stand alone units, this concept must be well managed.
 //	The solution here is to acknoledge the instable units and dissociate them from the amount
 //	of stable units. The group is then divided in two : stable units ($m_stable) and instable
 //	ones ($m_unstable). Since the instables result from heavy weaponery, it would be a mistake
@@ -33,11 +33,14 @@ goog.require('ogl.util.Division');
  * @param {[Number]} techs Tech levels.
  */
 ogl.util.Group = function(unit, amount, techs) {
-  this.unit = unit.clone();
-	this.unit.setTechs(techs);
+  this.unit = unit;
+	this.tech = tech.clone();
+	this.unitPower = this.unit.getPower() * this.tech.getWeaponFactor();
+	this.unitShield = this.unit.getShield() * this.tech.getShieldFactor();
+	this.unitHull = this.unit.getHull() * this.tech.getHullFactor();
 	this.divCoverage = 0.5;
-	this.amountDivInteg = 1 + Math.ceil(Math.max(0,Math.log(this.unit.hull())) / log(2.0));
-	this.amountDivShield = 1 + Math.ceil(Math.max(0,Math.log(this.unit.shield())) / log(10.0));
+	this.amountDivInteg = 1 + Math.ceil(Math.max(0,Math.log(this.unitHull)) / log(2.0));
+	this.amountDivShield = 1 + Math.ceil(Math.max(0,Math.log(this.unitShield)) / log(10.0));
 
 	this.integArr[0] = new ogl.util.Division(amount);
 	for(var i = 1; i < this.amountDivInteg; i++)
@@ -46,10 +49,10 @@ ogl.util.Group = function(unit, amount, techs) {
 
 /**
  * Create a clone of the group.
- * @return {ogl.utilGroup} clone.
+ * @return {ogl.util.Group} clone.
  */
 ogl.util.Group.prototype.clone = function() {
-	var group = new ogl.util.Group(this.unit.clone(), 0, this.unit.getTechs());
+	var group = new ogl.util.Group(this.unit, 0, this.tech);
 
 	for(var i = 0; i < this.integArr.length; i++)
 		this.integArr[$i] = this.integArr[$i].clone();
@@ -160,7 +163,7 @@ ogl.util.Group.prototype.getDivIDFromIntegrityNorm_ = function(integrityNorm) {
 ogl.util.Group.prototype.initRound = function() {
 	//old shield design
 	this.amountWShieldTemp = this.getAmountUnit();
-	this.shieldTemp = this.unit.getShield()*this.getAmountUnit();
+	this.shieldTemp = this.unitShield*this.getAmountUnit();
 
 	//Integrity
 	for (var i in this.integArr)
@@ -178,7 +181,7 @@ ogl.util.Group.prototype.initRound = function() {
  * @param {Number} power Power of each hit
  */
 ogl.util.Group.prototype.receiveWave = function(amountHit, power) {
-	if(this.unit.getshield() > 100*power)
+	if(this.unitShield > 100*power)
 	{
 		return; //Deflected TODO wrong
 	}
@@ -306,7 +309,7 @@ ogl.util.Group.prototype.receiveWave = function(amountHit, power) {
 		{
 			//If the combined power outcast the shield + hull of the unit
 			//	just send the shots and stop the loop
-			if(combinedPower >= (this.unit.getHull() + this.unit.getShield()))
+			if(combinedPower >= (this.unitHull + this.unitShield))
 			{
 				this.ackImpact(amountUnitHit, combinedPower * amountHit / amountUnitHit, combined * amountHit / amountUnitHit);
 				amountUnitHit = 0;
@@ -384,8 +387,8 @@ ogl.util.Group.prototype.ackImpact = function(amount, power, combined) {
 			//this->debug( "_Shield norm : ".number_format($shieldNorm, 2)." <br/>" );
 
 			//Shield effect
-			var consumedShield = Math.min(shieldNorm, power/this.unit.getShield());
-			var power = power - consumedShield * this.unit.getShield();
+			var consumedShield = Math.min(shieldNorm, power/this.unitShield);
+			var power = power - consumedShield * this.unitShield;
 			console.log("_Power left : " + power.toFixed(2));
 
 			//Displace data structure
@@ -415,7 +418,7 @@ ogl.util.Group.prototype.ackImpact = function(amount, power, combined) {
 ogl.util.Group.prototype.affectIntegrity = function(amount, power, combined) {
 	unitDestroyed = 0;
 	//Integrity consumed by the hit
-	consumedIntegrity = power/this.unit.getHull();
+	consumedIntegrity = power/this.unitHull;
 
 	amountInWave = this.getAmountUnitInWave();
 	if(amountInWave == 0)
@@ -443,7 +446,7 @@ ogl.util.Group.prototype.affectIntegrity = function(amount, power, combined) {
 			else if(integrityNorm-consumedIntegrity <= 0.7)
 			{
 				if(offExplosion > 0)
-					nonExplodingRatio *= Math.max(0, 0.7 - first*power/combined/this.unit.getHull());
+					nonExplodingRatio *= Math.max(0, 0.7 - first*power/combined/this.unitHull);
 				if(combined > 0)
 					forvar j = 1; j <= combined; j++) //Find a way to get rid of this for loop, time consuming
 						nonExplodingRatio *= integrityNorm-(consumedIntegrity*j)/combined;
